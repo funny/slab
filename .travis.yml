@@ -8,6 +8,7 @@ go:
 before_install:
     - uname -a
     - go get golang.org/x/tools/cmd/cover
+    - go get github.com/mattn/goveralls
     - go get github.com/funny/utest
 
 install:
