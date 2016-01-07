@@ -91,7 +91,7 @@ func Benchmark_SyncPool_GetAndPut_128(b *testing.B) {
 		return make([]byte, 128)
 	}
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		s.Get()
+		s.Put(s.Get().([]byte))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -105,7 +105,7 @@ func Benchmark_SyncPool_GetAndPut_256(b *testing.B) {
 		return make([]byte, 256)
 	}
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		s.Get()
+		s.Put(s.Get().([]byte))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -119,7 +119,7 @@ func Benchmark_SyncPool_GetAndPut_512(b *testing.B) {
 		return make([]byte, 512)
 	}
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		s.Get()
+		s.Put(s.Get().([]byte))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
