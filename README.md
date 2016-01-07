@@ -21,3 +21,15 @@ buf := pool.Alloc(64)
     ... use the buf ...
 pool.Free(buf)
 ```
+
+Performance
+===========
+
+```
+Benchmark_Alloc128_And_Free-4	20000000	        62.0 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Alloc256_And_Free-4	20000000	        59.7 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Alloc512_And_Free-4	20000000	        57.7 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Make128-4          	20000000	        73.8 ns/op	     128 B/op	       1 allocs/op
+Benchmark_Make256-4          	20000000	        94.7 ns/op	     256 B/op	       1 allocs/op
+Benchmark_Make512-4          	10000000	       146 ns/op	     512 B/op	       1 allocs/op
+```

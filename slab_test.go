@@ -59,7 +59,7 @@ func Test_AllocSlow(t *testing.T) {
 	utest.EqualNow(t, cap(mem), 1024)
 }
 
-func Benchmark_Alloc128(b *testing.B) {
+func Benchmark_Alloc128_And_Free(b *testing.B) {
 	pool := NewPool(128, 1024, 2, 1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -67,7 +67,7 @@ func Benchmark_Alloc128(b *testing.B) {
 	}
 }
 
-func Benchmark_Alloc256(b *testing.B) {
+func Benchmark_Alloc256_And_Free(b *testing.B) {
 	pool := NewPool(128, 1024, 2, 1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -75,7 +75,7 @@ func Benchmark_Alloc256(b *testing.B) {
 	}
 }
 
-func Benchmark_Alloc512(b *testing.B) {
+func Benchmark_Alloc512_And_Free(b *testing.B) {
 	pool := NewPool(128, 1024, 2, 1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
