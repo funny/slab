@@ -1,6 +1,7 @@
 package slab
 
 import (
+	"runtime"
 	"sync"
 	"testing"
 
@@ -89,6 +90,9 @@ func Benchmark_SyncPool_GetAndPut_128(b *testing.B) {
 	s.New = func() interface{} {
 		return make([]byte, 128)
 	}
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		s.Get()
+	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		s.Put(s.Get().([]byte))
@@ -100,6 +104,9 @@ func Benchmark_SyncPool_GetAndPut_256(b *testing.B) {
 	s.New = func() interface{} {
 		return make([]byte, 256)
 	}
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		s.Get()
+	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		s.Put(s.Get().([]byte))
@@ -110,6 +117,9 @@ func Benchmark_SyncPool_GetAndPut_512(b *testing.B) {
 	var s sync.Pool
 	s.New = func() interface{} {
 		return make([]byte, 512)
+	}
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		s.Get()
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {

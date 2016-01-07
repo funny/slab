@@ -1,10 +1,10 @@
+[![Build Status](https://travis-ci.org/funny/slab.svg)](https://travis-ci.org/funny/slab)
+[![Coverage Status](https://coveralls.io/repos/funny/slab/badge.svg?branch=master&service=github)](https://coveralls.io/github/funny/slab?branch=master)
+
 Introduction
 ============
 
 A lock-free slab allocator for Go.
-
-[![Build Status](https://travis-ci.org/funny/slab.svg)](https://travis-ci.org/funny/slab)
-[![Coverage Status](https://coveralls.io/repos/funny/slab/badge.svg?branch=master&service=github)](https://coveralls.io/github/funny/slab?branch=master)
 
 Usage
 =====
