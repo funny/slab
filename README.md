@@ -11,7 +11,7 @@ Usage
 
 ```go
 pool := slab.NewPool(
-	64,         // The smallest chunk size is 128B.
+	64,          // The smallest chunk size is 128B.
 	64 * 1024,   // The largest chunk size is 64KB.
 	2,           // Power of 2 growth in chunk size.
 	1024 * 1024, // Each slab will be 1MB in size.
