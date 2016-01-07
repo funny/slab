@@ -4,7 +4,7 @@
 Introduction
 ============
 
-A lock-free slab allocator for Go.
+A lock-free slab allocation memory pool for Go.
 
 Usage
 =====
@@ -38,5 +38,5 @@ Benchmark_SyncPool_GetAndPut_512-4	20000000	        84.9 ns/op	      32 B/op	   
 
 Benchmark_Make_128-4              	20000000	        72.8 ns/op	     128 B/op	       1 allocs/op
 Benchmark_Make_256-4              	20000000	        98.7 ns/op	     256 B/op	       1 allocs/op
-Benchmark_Make_512-4              	10000000	       142 ns/op	     512 B/op	       1 allocs/op
+Benchmark_Make_512-4              	10000000	        142  ns/op	     512 B/op	       1 allocs/op
 ```
