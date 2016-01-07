@@ -1,0 +1,25 @@
+language: go
+
+go:
+  - 1.4.3
+  - 1.5.2
+  - tip
+
+before_install:
+    - uname -a
+    - go get golang.org/x/tools/cmd/vet
+    - go get golang.org/x/tools/cmd/cover
+    - go get github.com/golang/lint/golint
+    - go get github.com/funny/utest
+
+install:
+    - go get -d -v . && go build -v .
+
+script:
+    - go vet -x .
+    - $HOME/gopath/bin/golint .
+    - go test -v -covermode=count -coverprofile=profile.cov
+
+after_script:
+    - $HOME/gopath/bin/goveralls -coverprofile=profile.cov -service=travis-ci
+    - go test -benchmem -bench .

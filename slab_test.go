@@ -7,7 +7,7 @@ import (
 )
 
 func Test_AllocFree(t *testing.T) {
-	pool := NewPool(1024*1024, 128, 64*1024, 2)
+	pool := NewPool(128, 64*1024, 2, 1024*1024)
 	for i := 0; i < len(pool.classes); i++ {
 		temp := make([][]byte, len(pool.classes[i].chunks))
 
@@ -26,19 +26,19 @@ func Test_AllocFree(t *testing.T) {
 }
 
 func Test_AllocSmall(t *testing.T) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	mem := pool.Alloc(0, 64)
 	utest.EqualNow(t, cap(mem), 128)
 }
 
 func Test_AllocLarge(t *testing.T) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	mem := pool.Alloc(0, 2048)
 	utest.EqualNow(t, cap(mem), 2048)
 }
 
 func Test_DoubleFree(t *testing.T) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	mem := pool.Alloc(0, 64)
 	go func() {
 		defer func() {
@@ -50,7 +50,7 @@ func Test_DoubleFree(t *testing.T) {
 }
 
 func Test_AllocSlow(t *testing.T) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	mem := pool.classes[len(pool.classes)-1].Pop()
 	utest.EqualNow(t, cap(mem), 1024)
 	utest.Assert(t, pool.classes[len(pool.classes)-1].head == nil)
@@ -60,7 +60,7 @@ func Test_AllocSlow(t *testing.T) {
 }
 
 func Benchmark_Alloc128(b *testing.B) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		pool.Free(pool.Alloc(0, 128))
@@ -68,7 +68,7 @@ func Benchmark_Alloc128(b *testing.B) {
 }
 
 func Benchmark_Alloc256(b *testing.B) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		pool.Free(pool.Alloc(0, 256))
@@ -76,7 +76,7 @@ func Benchmark_Alloc256(b *testing.B) {
 }
 
 func Benchmark_Alloc512(b *testing.B) {
-	pool := NewPool(1024, 128, 1024, 2)
+	pool := NewPool(128, 1024, 2, 1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		pool.Free(pool.Alloc(0, 512))

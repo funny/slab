@@ -6,10 +6,7 @@ import (
 	"unsafe"
 )
 
-const (
-	_MAX_CHUNK_SIZE = 64 * 1024
-)
-
+// Pool is a lock-free slab allocator.
 type Pool struct {
 	classes []class
 	minSize int
@@ -17,11 +14,11 @@ type Pool struct {
 }
 
 // NewPool create a new memory pool.
-// pageSize is the memory block size of slab class.
-// minSize is the base size of each chunk.
-// macSize is used to control the lagest size of chunk in the memory pool.
+// minSize is the smallest chunk size.
+// maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
-func NewPool(pageSize, minSize, maxSize, factor int) *Pool {
+// pageSize is the memory size of each slab class.
+func NewPool(minSize, maxSize, factor, pageSize int) *Pool {
 	pool := &Pool{make([]class, 0, 10), minSize, maxSize}
 	chunkSize := minSize
 	for {
@@ -48,6 +45,7 @@ func NewPool(pageSize, minSize, maxSize, factor int) *Pool {
 	return pool
 }
 
+// Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
 func (pool *Pool) Alloc(size, capacity int) []byte {
 	if capacity <= pool.maxSize {
 		if capacity < pool.minSize {
@@ -65,6 +63,7 @@ func (pool *Pool) Alloc(size, capacity int) []byte {
 	return make([]byte, size, capacity)
 }
 
+// Free release a []byte that alloc from Pool.Alloc.
 func (pool *Pool) Free(mem []byte) {
 	capacity := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
@@ -93,7 +92,7 @@ func (c *class) Push(mem []byte) {
 	if c.beginPtr <= ptr && ptr <= c.endPtr {
 		chk := &c.chunks[(ptr-c.beginPtr)/uintptr(c.size)]
 		if chk.next != nil {
-			panic("MemPool: Double Free")
+			panic("slab.Pool: Double Free")
 		}
 		for {
 			chk.next = atomic.LoadPointer(&c.head)
