@@ -18,7 +18,9 @@ pool := slab.NewPool(
 )
 
 buf := pool.Alloc(64)
+
     ... use the buf ...
+	
 pool.Free(buf)
 ```
 

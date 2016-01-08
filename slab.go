@@ -29,6 +29,7 @@ func NewPool(minSize, maxSize, factor, pageSize int) *Pool {
 		}
 		for i := 0; i < len(c.chunks); i++ {
 			chk := &c.chunks[i]
+			// lock down the capacity to protect append operation
 			chk.mem = c.page[i*chunkSize : (i+1)*chunkSize : (i+1)*chunkSize]
 			chk.next = c.head
 			c.head = unsafe.Pointer(chk)
@@ -46,8 +47,9 @@ func NewPool(minSize, maxSize, factor, pageSize int) *Pool {
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
-func (pool *Pool) Alloc(size, capacity int) []byte {
-	if capacity <= pool.maxSize {
+func (pool *Pool) Alloc(size int) []byte {
+	if size <= pool.maxSize {
+		capacity := size
 		if capacity < pool.minSize {
 			capacity = pool.minSize
 		}
@@ -60,7 +62,7 @@ func (pool *Pool) Alloc(size, capacity int) []byte {
 			}
 		}
 	}
-	return make([]byte, size, capacity)
+	return make([]byte, size)
 }
 
 // Free release a []byte that alloc from Pool.Alloc.
