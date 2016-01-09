@@ -18,12 +18,12 @@ func Test_AllocFree(t *testing.T) {
 			utest.EqualNow(t, cap(mem), pool.classes[i].size)
 			temp[j] = mem
 		}
-		utest.Assert(t, pool.classes[i].head == nil)
+		utest.Assert(t, pool.classes[i].head == 0)
 
 		for j := 0; j < len(temp); j++ {
 			pool.Free(temp[j])
 		}
-		utest.NotNilNow(t, pool.classes[i].head)
+		utest.Assert(t, pool.classes[i].head != 0)
 	}
 }
 
@@ -57,34 +57,40 @@ func Test_AllocSlow(t *testing.T) {
 	pool := NewPool(128, 1024, 2, 1024)
 	mem := pool.classes[len(pool.classes)-1].Pop()
 	utest.EqualNow(t, cap(mem), 1024)
-	utest.Assert(t, pool.classes[len(pool.classes)-1].head == nil)
+	utest.Assert(t, pool.classes[len(pool.classes)-1].head == 0)
 
 	mem = pool.Alloc(1024)
 	utest.EqualNow(t, cap(mem), 1024)
 }
 
 func Benchmark_Slab_AllocAndFree_128(b *testing.B) {
-	pool := NewPool(128, 1024, 2, 1024)
+	pool := NewPool(128, 1024, 2, 64*1024)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		pool.Free(pool.Alloc(128))
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Free(pool.Alloc(128))
+		}
+	})
 }
 
 func Benchmark_Slab_AllocAndFree_256(b *testing.B) {
-	pool := NewPool(128, 1024, 2, 1024)
+	pool := NewPool(128, 1024, 2, 64*1024)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		pool.Free(pool.Alloc(256))
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Free(pool.Alloc(256))
+		}
+	})
 }
 
 func Benchmark_Slab_AllocAndFree_512(b *testing.B) {
-	pool := NewPool(128, 1024, 2, 1024)
+	pool := NewPool(128, 1024, 2, 64*1024)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		pool.Free(pool.Alloc(512))
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Free(pool.Alloc(512))
+		}
+	})
 }
 
 func Benchmark_SyncPool_GetAndPut_128(b *testing.B) {
@@ -96,9 +102,11 @@ func Benchmark_SyncPool_GetAndPut_128(b *testing.B) {
 		s.Put(s.Get().([]byte))
 	}
 	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		s.Put(s.Get().([]byte))
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			s.Put(s.Get().([]byte))
+		}
+	})
 }
 
 func Benchmark_SyncPool_GetAndPut_256(b *testing.B) {
@@ -110,9 +118,11 @@ func Benchmark_SyncPool_GetAndPut_256(b *testing.B) {
 		s.Put(s.Get().([]byte))
 	}
 	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		s.Put(s.Get().([]byte))
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			s.Put(s.Get().([]byte))
+		}
+	})
 }
 
 func Benchmark_SyncPool_GetAndPut_512(b *testing.B) {
@@ -124,31 +134,39 @@ func Benchmark_SyncPool_GetAndPut_512(b *testing.B) {
 		s.Put(s.Get().([]byte))
 	}
 	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		s.Put(s.Get().([]byte))
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			s.Put(s.Get().([]byte))
+		}
+	})
 }
 
 func Benchmark_Make_128(b *testing.B) {
-	var x []byte
-	for i := 0; i < b.N; i++ {
-		x = make([]byte, 128)
-	}
-	x = x[:0]
+	b.RunParallel(func(pb *testing.PB) {
+		var x []byte
+		for pb.Next() {
+			x = make([]byte, 128)
+		}
+		x = x[:0]
+	})
 }
 
 func Benchmark_Make_256(b *testing.B) {
-	var x []byte
-	for i := 0; i < b.N; i++ {
-		x = make([]byte, 256)
-	}
-	x = x[:0]
+	b.RunParallel(func(pb *testing.PB) {
+		var x []byte
+		for pb.Next() {
+			x = make([]byte, 256)
+		}
+		x = x[:0]
+	})
 }
 
 func Benchmark_Make_512(b *testing.B) {
-	var x []byte
-	for i := 0; i < b.N; i++ {
-		x = make([]byte, 512)
-	}
-	x = x[:0]
+	b.RunParallel(func(pb *testing.PB) {
+		var x []byte
+		for pb.Next() {
+			x = make([]byte, 512)
+		}
+		x = x[:0]
+	})
 }

@@ -26,16 +26,19 @@ func NewPool(minSize, maxSize, factor, pageSize int) *Pool {
 			size:   chunkSize,
 			page:   make([]byte, pageSize),
 			chunks: make([]chunk, pageSize/chunkSize),
+			head:   (1 << 32),
 		}
 		for i := 0; i < len(c.chunks); i++ {
 			chk := &c.chunks[i]
 			// lock down the capacity to protect append operation
 			chk.mem = c.page[i*chunkSize : (i+1)*chunkSize : (i+1)*chunkSize]
-			chk.next = c.head
-			c.head = unsafe.Pointer(chk)
+			if i < len(c.chunks)-1 {
+				chk.next = uint64(i+1+1 /* index start from 1 */) << 32
+			} else {
+				c.pageBegin = uintptr(unsafe.Pointer(&c.page[0]))
+				c.pageEnd = uintptr(unsafe.Pointer(&chk.mem[0]))
+			}
 		}
-		c.beginPtr = uintptr(unsafe.Pointer(&c.chunks[0].mem[0]))
-		c.endPtr = uintptr(unsafe.Pointer(&c.chunks[len(c.chunks)-1].mem[0]))
 		pool.classes = append(pool.classes, c)
 
 		chunkSize *= factor
@@ -59,6 +62,7 @@ func (pool *Pool) Alloc(size int) []byte {
 				if mem != nil {
 					return mem[:size]
 				}
+				break
 			}
 		}
 	}
@@ -69,36 +73,46 @@ func (pool *Pool) Alloc(size int) []byte {
 func (pool *Pool) Free(mem []byte) {
 	capacity := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
-		if pool.classes[i].size >= capacity {
+		if pool.classes[i].size == capacity {
 			pool.classes[i].Push(mem)
+			break
 		}
 	}
 }
 
 type class struct {
-	size     int
-	page     []byte
-	chunks   []chunk
-	beginPtr uintptr
-	endPtr   uintptr
-	head     unsafe.Pointer
+	size      int
+	page      []byte
+	pageBegin uintptr
+	pageEnd   uintptr
+	chunks    []chunk
+	head      uint64
 }
 
 type chunk struct {
 	mem  []byte
-	next unsafe.Pointer
+	aba  uint32 // reslove ABA problem
+	next uint64
 }
 
 func (c *class) Push(mem []byte) {
 	ptr := (*reflect.SliceHeader)(unsafe.Pointer(&mem)).Data
-	if c.beginPtr <= ptr && ptr <= c.endPtr {
-		chk := &c.chunks[(ptr-c.beginPtr)/uintptr(c.size)]
-		if chk.next != nil {
+	if c.pageBegin <= ptr && ptr <= c.pageEnd {
+		i := (ptr - c.pageBegin) / uintptr(c.size)
+		chk := &c.chunks[i]
+		//fmt.Fprintf(os.Stderr, "push: %x\n", ptr)
+		if uintptr(unsafe.Pointer(&chk.mem[0])) != ptr {
+			panic("slab.Pool: Bad Chunk")
+		}
+		if chk.next != 0 {
 			panic("slab.Pool: Double Free")
 		}
+		chk.aba++
+		new := uint64(i+1)<<32 + uint64(chk.aba)
 		for {
-			chk.next = atomic.LoadPointer(&c.head)
-			if atomic.CompareAndSwapPointer(&c.head, chk.next, unsafe.Pointer(chk)) {
+			old := atomic.LoadUint64(&c.head)
+			chk.next = old
+			if atomic.CompareAndSwapUint64(&c.head, old, new) {
 				break
 			}
 		}
@@ -106,18 +120,15 @@ func (c *class) Push(mem []byte) {
 }
 
 func (c *class) Pop() []byte {
-	var ptr unsafe.Pointer
-	var chk *chunk
 	for {
-		ptr = atomic.LoadPointer(&c.head)
-		if ptr == nil {
+		old := atomic.LoadUint64(&c.head)
+		if old == 0 {
 			return nil
 		}
-		chk = (*chunk)(ptr)
-		if atomic.CompareAndSwapPointer(&c.head, ptr, chk.next) {
-			break
+		chk := &c.chunks[old>>32-1]
+		if atomic.CompareAndSwapUint64(&c.head, old, chk.next) {
+			chk.next = 0
+			return chk.mem
 		}
 	}
-	chk.next = nil
-	return chk.mem
 }
