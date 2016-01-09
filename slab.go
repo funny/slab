@@ -100,10 +100,6 @@ func (c *class) Push(mem []byte) {
 	if c.pageBegin <= ptr && ptr <= c.pageEnd {
 		i := (ptr - c.pageBegin) / uintptr(c.size)
 		chk := &c.chunks[i]
-		//fmt.Fprintf(os.Stderr, "push: %x\n", ptr)
-		if uintptr(unsafe.Pointer(&chk.mem[0])) != ptr {
-			panic("slab.Pool: Bad Chunk")
-		}
 		if chk.next != 0 {
 			panic("slab.Pool: Double Free")
 		}

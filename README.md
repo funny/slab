@@ -30,15 +30,15 @@ Performance
 Compare with `sync.Pool` and `make([]byte, n)` when `GOMAXPROCS=16`:
 
 ```
-Benchmark_Slab_AllocAndFree_128-16 	10000000	       182 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Slab_AllocAndFree_256-16 	10000000	       183 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Slab_AllocAndFree_512-16 	10000000	       183 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Slab_AllocAndFree_128-16 	10000000	       180 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Slab_AllocAndFree_256-16 	10000000	       172 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Slab_AllocAndFree_512-16 	10000000	       171 ns/op	       0 B/op	       0 allocs/op
 
-Benchmark_SyncPool_GetAndPut_128-16	20000000	        60.9 ns/op	      32 B/op	       1 allocs/op
-Benchmark_SyncPool_GetAndPut_256-16	20000000	        62.1 ns/op	      32 B/op	       1 allocs/op
-Benchmark_SyncPool_GetAndPut_512-16	20000000	        61.7 ns/op	      32 B/op	       1 allocs/op
+Benchmark_SyncPool_GetAndPut_128-16	20000000	        67.6 ns/op	      32 B/op	       1 allocs/op
+Benchmark_SyncPool_GetAndPut_256-16	20000000	        61.1 ns/op	      32 B/op	       1 allocs/op
+Benchmark_SyncPool_GetAndPut_512-16	20000000	        65.8 ns/op	      32 B/op	       1 allocs/op
 
-Benchmark_Make_128-16              	30000000	        53.5 ns/op	     128 B/op	       1 allocs/op
-Benchmark_Make_256-16              	20000000	        82.6 ns/op	     256 B/op	       1 allocs/op
-Benchmark_Make_512-16              	10000000	       139 ns/op	     512 B/op	       1 allocs/op
+Benchmark_Make_128-16              	30000000	        48.9 ns/op	     128 B/op	       1 allocs/op
+Benchmark_Make_256-16              	20000000	        80.8 ns/op	     256 B/op	       1 allocs/op
+Benchmark_Make_512-16              	10000000	       118 ns/op	     512 B/op	       1 allocs/op
 ```
