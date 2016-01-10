@@ -30,6 +30,7 @@ func Test_LockFree_AllocSmall(t *testing.T) {
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
 	utest.EqualNow(t, cap(mem), 128)
+	pool.Free(mem)
 }
 
 func Test_LockFree_AllocLarge(t *testing.T) {
@@ -37,6 +38,7 @@ func Test_LockFree_AllocLarge(t *testing.T) {
 	mem := pool.Alloc(2048)
 	utest.EqualNow(t, len(mem), 2048)
 	utest.EqualNow(t, cap(mem), 2048)
+	pool.Free(mem)
 }
 
 func Test_LockFree_DoubleFree(t *testing.T) {
