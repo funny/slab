@@ -4,13 +4,13 @@
 Introduction
 ============
 
-A lock-free slab allocation memory pool for Go.
+Slab allocation memory pools for Go.
 
 Usage
 =====
 
 ```go
-// Create a lock-free pool
+// Create a lock-free slab allocation memory pool
 pool := slab.NewLockFreePool(
 	64,          // The smallest chunk size is 128B.
 	64 * 1024,   // The largest chunk size is 64KB.
@@ -26,7 +26,7 @@ pool.Free(buf)
 ```
 
 ```go
-// Create a sync.Pool based memory pool
+// Create a sync.Pool based slab allocation memory pool
 pool := slab.NewSyncPool(
 	64,          // The smallest chunk size is 128B.
 	64 * 1024,   // The largest chunk size is 64KB.
