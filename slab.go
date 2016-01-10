@@ -6,20 +6,20 @@ import (
 	"unsafe"
 )
 
-// Pool is a lock-free slab allocator.
-type Pool struct {
+// LockFreePool is a lock-free slab allocation memory pool.
+type LockFreePool struct {
 	classes []class
 	minSize int
 	maxSize int
 }
 
-// NewPool create a new memory pool.
+// NewLockFreePool create a new memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewPool(minSize, maxSize, factor, pageSize int) *Pool {
-	pool := &Pool{make([]class, 0, 10), minSize, maxSize}
+func NewLockFreePool(minSize, maxSize, factor, pageSize int) *LockFreePool {
+	pool := &LockFreePool{make([]class, 0, 10), minSize, maxSize}
 	chunkSize := minSize
 	for {
 		c := class{
@@ -50,14 +50,10 @@ func NewPool(minSize, maxSize, factor, pageSize int) *Pool {
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
-func (pool *Pool) Alloc(size int) []byte {
+func (pool *LockFreePool) Alloc(size int) []byte {
 	if size <= pool.maxSize {
-		capacity := size
-		if capacity < pool.minSize {
-			capacity = pool.minSize
-		}
 		for i := 0; i < len(pool.classes); i++ {
-			if pool.classes[i].size >= capacity {
+			if pool.classes[i].size >= size {
 				mem := pool.classes[i].Pop()
 				if mem != nil {
 					return mem[:size]
@@ -70,7 +66,7 @@ func (pool *Pool) Alloc(size int) []byte {
 }
 
 // Free release a []byte that alloc from Pool.Alloc.
-func (pool *Pool) Free(mem []byte) {
+func (pool *LockFreePool) Free(mem []byte) {
 	capacity := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
 		if pool.classes[i].size == capacity {

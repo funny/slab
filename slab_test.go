@@ -1,15 +1,13 @@
 package slab
 
 import (
-	"runtime"
-	"sync"
 	"testing"
 
 	"github.com/funny/utest"
 )
 
-func Test_AllocFree(t *testing.T) {
-	pool := NewPool(128, 64*1024, 2, 1024*1024)
+func Test_LockFree_AllocAndFree(t *testing.T) {
+	pool := NewLockFreePool(128, 64*1024, 2, 1024*1024)
 	for i := 0; i < len(pool.classes); i++ {
 		temp := make([][]byte, len(pool.classes[i].chunks))
 
@@ -27,22 +25,22 @@ func Test_AllocFree(t *testing.T) {
 	}
 }
 
-func Test_AllocSmall(t *testing.T) {
-	pool := NewPool(128, 1024, 2, 1024)
+func Test_LockFree_AllocSmall(t *testing.T) {
+	pool := NewLockFreePool(128, 1024, 2, 1024)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
 	utest.EqualNow(t, cap(mem), 128)
 }
 
-func Test_AllocLarge(t *testing.T) {
-	pool := NewPool(128, 1024, 2, 1024)
+func Test_LockFree_AllocLarge(t *testing.T) {
+	pool := NewLockFreePool(128, 1024, 2, 1024)
 	mem := pool.Alloc(2048)
 	utest.EqualNow(t, len(mem), 2048)
 	utest.EqualNow(t, cap(mem), 2048)
 }
 
-func Test_DoubleFree(t *testing.T) {
-	pool := NewPool(128, 1024, 2, 1024)
+func Test_LockFree_DoubleFree(t *testing.T) {
+	pool := NewLockFreePool(128, 1024, 2, 1024)
 	mem := pool.Alloc(64)
 	go func() {
 		defer func() {
@@ -53,8 +51,8 @@ func Test_DoubleFree(t *testing.T) {
 	}()
 }
 
-func Test_AllocSlow(t *testing.T) {
-	pool := NewPool(128, 1024, 2, 1024)
+func Test_LockFree_AllocSlow(t *testing.T) {
+	pool := NewLockFreePool(128, 1024, 2, 1024)
 	mem := pool.classes[len(pool.classes)-1].Pop()
 	utest.EqualNow(t, cap(mem), 1024)
 	utest.Assert(t, pool.classes[len(pool.classes)-1].head == 0)
@@ -63,8 +61,8 @@ func Test_AllocSlow(t *testing.T) {
 	utest.EqualNow(t, cap(mem), 1024)
 }
 
-func Benchmark_Slab_AllocAndFree_128(b *testing.B) {
-	pool := NewPool(128, 1024, 2, 64*1024)
+func Benchmark_LockFree_AllocAndFree_128(b *testing.B) {
+	pool := NewLockFreePool(128, 1024, 2, 64*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -73,8 +71,8 @@ func Benchmark_Slab_AllocAndFree_128(b *testing.B) {
 	})
 }
 
-func Benchmark_Slab_AllocAndFree_256(b *testing.B) {
-	pool := NewPool(128, 1024, 2, 64*1024)
+func Benchmark_LockFree_AllocAndFree_256(b *testing.B) {
+	pool := NewLockFreePool(128, 1024, 2, 64*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -83,8 +81,8 @@ func Benchmark_Slab_AllocAndFree_256(b *testing.B) {
 	})
 }
 
-func Benchmark_Slab_AllocAndFree_512(b *testing.B) {
-	pool := NewPool(128, 1024, 2, 64*1024)
+func Benchmark_LockFree_AllocAndFree_512(b *testing.B) {
+	pool := NewLockFreePool(128, 1024, 2, 64*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -92,51 +90,32 @@ func Benchmark_Slab_AllocAndFree_512(b *testing.B) {
 		}
 	})
 }
-
-func Benchmark_SyncPool_GetAndPut_128(b *testing.B) {
-	var s sync.Pool
-	s.New = func() interface{} {
-		return make([]byte, 128)
-	}
-	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		s.Put(s.Get().([]byte))
-	}
-	b.StartTimer()
+func Benchmark_Sync_AllocAndFree_128(b *testing.B) {
+	pool := NewSyncPool(128, 1024, 2)
+	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			s.Put(s.Get().([]byte))
+			pool.Free(pool.Alloc(128))
 		}
 	})
 }
 
-func Benchmark_SyncPool_GetAndPut_256(b *testing.B) {
-	var s sync.Pool
-	s.New = func() interface{} {
-		return make([]byte, 256)
-	}
-	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		s.Put(s.Get().([]byte))
-	}
-	b.StartTimer()
+func Benchmark_Sync_AllocAndFree_256(b *testing.B) {
+	pool := NewSyncPool(128, 1024, 2)
+	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			s.Put(s.Get().([]byte))
+			pool.Free(pool.Alloc(256))
 		}
 	})
 }
 
-func Benchmark_SyncPool_GetAndPut_512(b *testing.B) {
-	var s sync.Pool
-	s.New = func() interface{} {
-		return make([]byte, 512)
-	}
-	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		s.Put(s.Get().([]byte))
-	}
-	b.StartTimer()
+func Benchmark_Sync_AllocAndFree_512(b *testing.B) {
+	pool := NewSyncPool(128, 1024, 2)
+	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			s.Put(s.Get().([]byte))
+			pool.Free(pool.Alloc(512))
 		}
 	})
 }
