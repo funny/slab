@@ -13,7 +13,7 @@ type LockFreePool struct {
 	maxSize int
 }
 
-// NewLockFreePool create a new memory pool.
+// NewLockFreePool create a lock-free slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
@@ -42,7 +42,7 @@ func NewLockFreePool(minSize, maxSize, factor, pageSize int) *LockFreePool {
 		pool.classes = append(pool.classes, c)
 
 		chunkSize *= factor
-		if chunkSize > maxSize {
+		if chunkSize > maxSize || chunkSize > pageSize {
 			break
 		}
 	}
