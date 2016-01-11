@@ -43,18 +43,18 @@ pool.Free(buf)
 Performance
 ===========
 
-When `GOMAXPROCS=16`:
+Result of `GOMAXPROCS=16 go test -v -bench=. -benchmem`:
 
 ```
-Benchmark_AtomPool_AllocAndFree_128-4	10000000	       183 ns/op	       0 B/op	       0 allocs/op
-Benchmark_AtomPool_AllocAndFree_256-4	10000000	       185 ns/op	       0 B/op	       0 allocs/op
-Benchmark_AtomPool_AllocAndFree_512-4	10000000	       183 ns/op	       0 B/op	       0 allocs/op
+Benchmark_AtomPool_AllocAndFree_128-16	10000000	       185 ns/op	       0 B/op	       0 allocs/op
+Benchmark_AtomPool_AllocAndFree_256-16	10000000	       181 ns/op	       0 B/op	       0 allocs/op
+Benchmark_AtomPool_AllocAndFree_512-16	10000000	       176 ns/op	       0 B/op	       0 allocs/op
 
-Benchmark_SyncPool_AllocAndFree_128-4	20000000	        66.2 ns/op	      32 B/op	       1 allocs/op
-Benchmark_SyncPool_AllocAndFree_256-4	20000000	        68.8 ns/op	      32 B/op	       1 allocs/op
-Benchmark_SyncPool_AllocAndFree_512-4	20000000	        69.7 ns/op	      32 B/op	       1 allocs/op
+Benchmark_SyncPool_AllocAndFree_128-16	20000000	        92.6 ns/op	      32 B/op	       1 allocs/op
+Benchmark_SyncPool_AllocAndFree_256-16	20000000	        76.6 ns/op	      32 B/op	       1 allocs/op
+Benchmark_SyncPool_AllocAndFree_512-16	20000000	        81.3 ns/op	      32 B/op	       1 allocs/op
 
-Benchmark_Make_128-4                 	30000000	        48.1 ns/op	     128 B/op	       1 allocs/op
-Benchmark_Make_256-4                 	20000000	        74.5 ns/op	     256 B/op	       1 allocs/op
-Benchmark_Make_512-4                 	10000000	       101 ns/op	     512 B/op	       1 allocs/op
+Benchmark_Make_128-16                 	20000000	        52.9 ns/op	     128 B/op	       1 allocs/op
+Benchmark_Make_256-16                 	20000000	        97.1 ns/op	     256 B/op	       1 allocs/op
+Benchmark_Make_512-16                 	10000000	       128 ns/op	     512 B/op	       1 allocs/op
 ```
