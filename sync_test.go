@@ -52,6 +52,36 @@ func Benchmark_SyncPool_AllocAndFree_512(b *testing.B) {
 	})
 }
 
+func Benchmark_SyncPool_AlloMiss_128(b *testing.B) {
+	pool := NewSyncPool(128, 1024, 2)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Alloc(128)
+		}
+	})
+}
+
+func Benchmark_SyncPool_AlloMiss_256(b *testing.B) {
+	pool := NewSyncPool(128, 1024, 2)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Alloc(256)
+		}
+	})
+}
+
+func Benchmark_SyncPool_AlloMiss_512(b *testing.B) {
+	pool := NewSyncPool(128, 1024, 2)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Alloc(512)
+		}
+	})
+}
+
 func Benchmark_Make_128(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		var x []byte
