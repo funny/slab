@@ -6,20 +6,20 @@ import (
 	"unsafe"
 )
 
-// LockFreePool is a lock-free slab allocation memory pool.
-type LockFreePool struct {
+// AtomPool is a lock-free slab allocation memory pool.
+type AtomPool struct {
 	classes []class
 	minSize int
 	maxSize int
 }
 
-// NewLockFreePool create a lock-free slab allocation memory pool.
+// NewAtomPool create a lock-free slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewLockFreePool(minSize, maxSize, factor, pageSize int) *LockFreePool {
-	pool := &LockFreePool{make([]class, 0, 10), minSize, maxSize}
+func NewAtomPool(minSize, maxSize, factor, pageSize int) *AtomPool {
+	pool := &AtomPool{make([]class, 0, 10), minSize, maxSize}
 	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		c := class{
 			size:   chunkSize,
@@ -44,7 +44,7 @@ func NewLockFreePool(minSize, maxSize, factor, pageSize int) *LockFreePool {
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
-func (pool *LockFreePool) Alloc(size int) []byte {
+func (pool *AtomPool) Alloc(size int) []byte {
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
@@ -60,7 +60,7 @@ func (pool *LockFreePool) Alloc(size int) []byte {
 }
 
 // Free release a []byte that alloc from Pool.Alloc.
-func (pool *LockFreePool) Free(mem []byte) {
+func (pool *AtomPool) Free(mem []byte) {
 	size := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
 		if pool.classes[i].size == size {
