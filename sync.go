@@ -16,7 +16,7 @@ type SyncPool struct {
 // factor is used to control growth of chunk size.
 func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 	n := 0
-	for chunkSize := minSize; chunkSize < maxSize; chunkSize *= factor {
+	for chunkSize := minSize; chunkSize <= maxSize; chunkSize *= factor {
 		n++
 	}
 	pool := &SyncPool{
@@ -25,7 +25,7 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 		minSize, maxSize,
 	}
 	n = 0
-	for chunkSize := minSize; chunkSize < maxSize; chunkSize *= factor {
+	for chunkSize := minSize; chunkSize <= maxSize; chunkSize *= factor {
 		pool.classesSize[n] = chunkSize
 		pool.classes[n].New = func(size int) func() interface{} {
 			return func() interface{} {
@@ -52,8 +52,7 @@ func (pool *SyncPool) Alloc(size int) []byte {
 
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *SyncPool) Free(mem []byte) {
-	size := cap(mem)
-	if size <= pool.maxSize {
+	if size := cap(mem); size <= pool.maxSize {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				pool.classes[i].Put(mem)

@@ -92,7 +92,7 @@ func Benchmark_LockFree_AllocAndFree_512(b *testing.B) {
 		}
 	})
 }
-func Benchmark_Sync_AllocAndFree_128(b *testing.B) {
+func Benchmark_SyncPool_AllocAndFree_128(b *testing.B) {
 	pool := NewSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -102,7 +102,7 @@ func Benchmark_Sync_AllocAndFree_128(b *testing.B) {
 	})
 }
 
-func Benchmark_Sync_AllocAndFree_256(b *testing.B) {
+func Benchmark_SyncPool_AllocAndFree_256(b *testing.B) {
 	pool := NewSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -112,7 +112,7 @@ func Benchmark_Sync_AllocAndFree_256(b *testing.B) {
 	})
 }
 
-func Benchmark_Sync_AllocAndFree_512(b *testing.B) {
+func Benchmark_SyncPool_AllocAndFree_512(b *testing.B) {
 	pool := NewSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {

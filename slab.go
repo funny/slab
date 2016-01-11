@@ -20,8 +20,7 @@ type LockFreePool struct {
 // pageSize is the memory size of each slab class.
 func NewLockFreePool(minSize, maxSize, factor, pageSize int) *LockFreePool {
 	pool := &LockFreePool{make([]class, 0, 10), minSize, maxSize}
-	chunkSize := minSize
-	for {
+	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		c := class{
 			size:   chunkSize,
 			page:   make([]byte, pageSize),
@@ -40,11 +39,6 @@ func NewLockFreePool(minSize, maxSize, factor, pageSize int) *LockFreePool {
 			}
 		}
 		pool.classes = append(pool.classes, c)
-
-		chunkSize *= factor
-		if chunkSize > maxSize || chunkSize > pageSize {
-			break
-		}
 	}
 	return pool
 }
@@ -67,9 +61,9 @@ func (pool *LockFreePool) Alloc(size int) []byte {
 
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *LockFreePool) Free(mem []byte) {
-	capacity := cap(mem)
+	size := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
-		if pool.classes[i].size == capacity {
+		if pool.classes[i].size == size {
 			pool.classes[i].Push(mem)
 			break
 		}
