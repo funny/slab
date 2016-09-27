@@ -29,7 +29,8 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 		pool.classesSize[n] = chunkSize
 		pool.classes[n].New = func(size int) func() interface{} {
 			return func() interface{} {
-				return make([]byte, size)
+				buf := make([]byte, size)
+				return &buf
 			}
 		}(chunkSize)
 		n++
@@ -42,8 +43,8 @@ func (pool *SyncPool) Alloc(size int) []byte {
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
-				mem := pool.classes[i].Get().([]byte)
-				return mem[:size]
+				mem := pool.classes[i].Get().(*[]byte)
+				return (*mem)[:size]
 			}
 		}
 	}
@@ -55,7 +56,7 @@ func (pool *SyncPool) Free(mem []byte) {
 	if size := cap(mem); size <= pool.maxSize {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
-				pool.classes[i].Put(mem)
+				pool.classes[i].Put(&mem)
 				return
 			}
 		}
