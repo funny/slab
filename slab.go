@@ -7,3 +7,4 @@ type Pool interface {
 
 var _ = Pool((*ChanPool)(nil))
 var _ = Pool((*SyncPool)(nil))
+var _ = Pool((*AtomPool)(nil))
