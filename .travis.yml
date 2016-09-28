@@ -3,6 +3,7 @@ language: go
 go:
   - 1.4.3
   - 1.5.2
+  - 1.7
   - tip
 
 before_install:
@@ -19,4 +20,4 @@ script:
 
 after_script:
     - $HOME/gopath/bin/goveralls -coverprofile=profile.cov -service=travis-ci
-    - go test -benchmem -bench .
+    - go test -race -benchmem -bench .
