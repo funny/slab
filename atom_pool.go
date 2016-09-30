@@ -2,6 +2,7 @@ package slab
 
 import (
 	"reflect"
+	"runtime"
 	"sync/atomic"
 	"unsafe"
 )
@@ -101,6 +102,7 @@ func (c *class) Push(mem []byte) {
 			if atomic.CompareAndSwapUint64(&c.head, old, new) {
 				break
 			}
+			runtime.Gosched()
 		}
 	}
 }
@@ -117,5 +119,6 @@ func (c *class) Pop() []byte {
 			atomic.StoreUint64(&chk.next, 0)
 			return chk.mem
 		}
+		runtime.Gosched()
 	}
 }
