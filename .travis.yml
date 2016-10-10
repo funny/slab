@@ -4,7 +4,6 @@ go:
   - 1.5.4
   - 1.6.3
   - 1.7.1
-  - tip
 
 install:
     - go get github.com/mattn/goveralls
