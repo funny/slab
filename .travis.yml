@@ -2,22 +2,20 @@ language: go
 
 go:
   - 1.4.3
-  - 1.5.2
-  - 1.7
+  - 1.5.4
+  - 1.6.3
+  - 1.7.1
   - tip
 
-before_install:
-    - uname -a
-    - go get golang.org/x/tools/cmd/cover
-    - go get github.com/mattn/goveralls
-    - go get github.com/funny/utest
-
 install:
-    - go get -d -v . && go build -v .
+    - go get github.com/mattn/goveralls
+    - go get -t -v ./...
 
 script:
-    - go test -v -covermode=count -coverprofile=profile.cov
+    - go vet -x
+    - go install
+    - go test -benchmem -bench -v
+    - go test -race -bench -coverprofile=coverage.txt -covermode=atomic -v
 
-after_script:
-    - $HOME/gopath/bin/goveralls -coverprofile=profile.cov -service=travis-ci
-    - go test -race -benchmem -bench .
+after_success:
+    - bash <(curl -s https://codecov.io/bash)
