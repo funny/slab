@@ -12,8 +12,8 @@ install:
 script:
     - go vet -x
     - go install
-    - go test -benchmem -bench -v
-    - go test -race -bench -coverprofile=coverage.txt -covermode=atomic -v
+    - go test -benchmem -bench=. -v
+    - go test -race -bench=. -coverprofile=coverage.txt -covermode=atomic -v
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
