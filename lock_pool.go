@@ -19,15 +19,21 @@ type LockPool struct {
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
 func NewLockPool(minSize, maxSize, factor, pageSize int) *LockPool {
-	pool := &LockPool{make([]lockClass, 0, 10), minSize, maxSize}
+	n := 0
 	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
-		c := lockClass{
-			size:   chunkSize,
-			page:   make([]byte, pageSize),
-			chunks: make([][]byte, pageSize/chunkSize),
-			head:   0,
-			tail:   pageSize/chunkSize - 1,
-		}
+		n++
+	}
+	pool := &LockPool{make([]lockClass, n), minSize, maxSize}
+
+	n = 0
+	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
+		c := &pool.classes[n]
+		c.size = chunkSize
+		c.page = make([]byte, pageSize)
+		c.chunks = make([][]byte, pageSize/chunkSize)
+		c.head = 0
+		c.tail = pageSize/chunkSize - 1
+
 		for i := 0; i < len(c.chunks); i++ {
 			// lock down the capacity to protect append operation
 			c.chunks[i] = c.page[i*chunkSize : (i+1)*chunkSize : (i+1)*chunkSize]
@@ -36,7 +42,8 @@ func NewLockPool(minSize, maxSize, factor, pageSize int) *LockPool {
 				c.pageEnd = uintptr(unsafe.Pointer(&c.chunks[i][0]))
 			}
 		}
-		pool.classes = append(pool.classes, c)
+
+		n++
 	}
 	return pool
 }
