@@ -1,13 +1,10 @@
-[![Build Status](https://travis-ci.org/funny/slab.svg)](https://travis-ci.org/funny/slab)
-[![Coverage Status](https://coveralls.io/repos/funny/slab/badge.svg?branch=master&service=github)](https://coveralls.io/github/funny/slab?branch=master)
-
 Introduction
 ============
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/funny/slab)](https://goreportcard.com/report/github.com/funny/slab)
 [![Build Status](https://travis-ci.org/funny/slab.svg?branch=master)](https://travis-ci.org/funny/slab)
 [![codecov](https://codecov.io/gh/funny/slab/branch/master/graph/badge.svg)](https://codecov.io/gh/funny/slab)
-[![GoDoc](https://img.shields.io/badge/api-reference-blue.svg)](https://godoc.org/github.com/funny/slab/golang)
+[![GoDoc](https://img.shields.io/badge/api-reference-blue.svg)](https://godoc.org/github.com/funny/slab)
 
 Slab allocation memory pools for Go.
 
