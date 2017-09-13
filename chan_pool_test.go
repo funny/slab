@@ -44,7 +44,7 @@ func Test_ChanPool_DoubleFree(t *testing.T) {
 	mem := pool.Alloc(64)
 	go func() {
 		defer func() {
-			utest.NotNilNow(t, recover())
+			utest.IsNilNow(t, recover())
 		}()
 		pool.Free(mem)
 		pool.Free(mem)

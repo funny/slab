@@ -55,6 +55,9 @@ func (pool *ChanPool) GetErrChan() <-chan error {
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
 func (pool *ChanPool) Alloc(size int) []byte {
+	if pool == nil {
+		return nil
+	}
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
@@ -71,6 +74,9 @@ func (pool *ChanPool) Alloc(size int) []byte {
 
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *ChanPool) Free(mem []byte) {
+	if pool == nil {
+		return
+	}
 	size := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
 		if pool.classes[i].size == size {
@@ -90,6 +96,9 @@ type chanClass struct {
 }
 
 func (c *chanClass) Push(mem []byte) {
+	if c == nil {
+		return
+	}
 	select {
 	case c.chunks <- mem:
 	default:
@@ -99,6 +108,9 @@ func (c *chanClass) Push(mem []byte) {
 }
 
 func (c *chanClass) Pop() []byte {
+	if c == nil {
+		return nil
+	}
 	select {
 	case mem := <-c.chunks:
 		return mem
