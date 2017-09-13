@@ -15,8 +15,12 @@ type SyncPool struct {
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
+	var chunkSize int
 	n := 0
-	for chunkSize := minSize; chunkSize <= maxSize; chunkSize *= factor {
+	for chunkSize = minSize; chunkSize <= maxSize; chunkSize *= factor {
+		n++
+	}
+	if maxSize > chunkSize {
 		n++
 	}
 	pool := &SyncPool{
@@ -24,8 +28,8 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 		make([]int, n),
 		minSize, maxSize,
 	}
-	n = 0
-	for chunkSize := minSize; chunkSize <= maxSize; chunkSize *= factor {
+	chunkSize = minSize
+	for i := 0; i < n; i++ {
 		pool.classesSize[n] = chunkSize
 		pool.classes[n].New = func(size int) func() interface{} {
 			return func() interface{} {
@@ -33,7 +37,7 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 				return &buf
 			}
 		}(chunkSize)
-		n++
+		chunkSize *= factor
 	}
 	return pool
 }
