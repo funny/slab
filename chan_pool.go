@@ -1,12 +1,17 @@
 package slab
 
-import "unsafe"
+import (
+	"unsafe"
+
+	"github.com/pkg/errors"
+)
 
 // ChanPool is a chan based slab allocation memory pool.
 type ChanPool struct {
 	classes []chanClass
 	minSize int
 	maxSize int
+	errChan chan error
 }
 
 // NewChanPool create a chan based slab allocation memory pool.
@@ -15,13 +20,20 @@ type ChanPool struct {
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
 func NewChanPool(minSize, maxSize, factor, pageSize int) *ChanPool {
-	pool := &ChanPool{make([]chanClass, 0, 10), minSize, maxSize}
+	var i int = 0
+	pool := &ChanPool{
+		classes: make([]chanClass, 0, 10),
+		minSize: minSize,
+		maxSize: maxSize,
+	}
 	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
+		i++
 		c := chanClass{
 			size:   chunkSize,
 			page:   make([]byte, pageSize),
 			chunks: make(chan []byte, pageSize/chunkSize),
 		}
+		c.chanPool = pool
 		c.pageBegin = uintptr(unsafe.Pointer(&c.page[0]))
 		for i := 0; i < pageSize/chunkSize; i++ {
 			// lock down the capacity to protect append operation
@@ -33,7 +45,12 @@ func NewChanPool(minSize, maxSize, factor, pageSize int) *ChanPool {
 		}
 		pool.classes = append(pool.classes, c)
 	}
+	pool.errChan = make(chan error, i*5)
 	return pool
+}
+
+func (pool *ChanPool) GetErrChan() <-chan error {
+	return pool.errChan
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
@@ -69,10 +86,18 @@ type chanClass struct {
 	pageBegin uintptr
 	pageEnd   uintptr
 	chunks    chan []byte
+	chanPool  *ChanPool
 }
 
 func (c *chanClass) Push(mem []byte) {
-	c.chunks <- mem
+	select {
+	case c.chunks <- mem:
+		return
+	default:
+		c.chanPool.errChan <- errors.Errorf("size: [%d],  chanClass's channels are overflowing...", c.size)
+		return
+	}
+	return
 }
 
 func (c *chanClass) Pop() []byte {
