@@ -92,10 +92,8 @@ type chanClass struct {
 func (c *chanClass) Push(mem []byte) {
 	select {
 	case c.chunks <- mem:
-		return
 	default:
 		c.chanPool.errChan <- errors.Errorf("size: [%d],  chanClass's channels are overflowing...", c.size)
-		return
 	}
 	return
 }
