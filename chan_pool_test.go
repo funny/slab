@@ -1,7 +1,9 @@
 package slab
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/1046102779/utest"
 )
@@ -37,6 +39,21 @@ func Test_ChanPool_Free_IsNilPtr(t *testing.T) {
 	utest.IsNilNow(t, pool)
 }
 
+func Test_ChanPool_ErrChan(t *testing.T) {
+	pool := NewChanPool(128, 1024, 2, 1024)
+	tick := time.NewTicker(2 * time.Second)
+	go func() {
+		for {
+			select {
+			case err := <-pool.ErrChan():
+				fmt.Println(err.Error())
+				return
+			case <-tick.C:
+			}
+		}
+	}()
+	return
+}
 func Test_ChanPool_AllocSmall(t *testing.T) {
 	pool := NewChanPool(128, 1024, 2, 1024)
 	mem := pool.Alloc(64)
