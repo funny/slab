@@ -17,7 +17,16 @@ func Test_SyncPool_Free_NilPtr(t *testing.T) {
 	var syncPool *SyncPool
 	mem := make([]byte, 16)
 	syncPool.Free(mem)
-	utest.IsNilNow(t, syncPool)
+	// utest project exists a bug for interface{}
+	//utest.IsNilNow(t, syncPool)
+}
+
+func Test_SyncPool_Alloc_CriticalValue(t *testing.T) {
+	pool := NewSyncPool(128, 1000, 2) // test: maxSize > ( last chunkSize = 512 )
+	mem := pool.Alloc(1023)
+	utest.EqualNow(t, len(mem), 1023)
+	utest.EqualNow(t, cap(mem), 1023)
+	pool.Free(mem)
 }
 
 func Test_SyncPool_AllocSmall_NonIntFactor(t *testing.T) {
@@ -56,6 +65,13 @@ func Test_SyncPool_Alloc_BeyondSize(t *testing.T) {
 	mem := pool.Alloc(2500)
 	utest.EqualNow(t, len(mem), 2500)
 	utest.EqualNow(t, cap(mem), 2500)
+	pool.Free(mem)
+}
+func Test_SyncPool_Alloc_LastElemSize(t *testing.T) {
+	pool := NewSyncPool(128, 1500, 2) // maxSize< 1600  <last elem size
+	mem := pool.Alloc(1600)
+	utest.EqualNow(t, len(mem), 1600)
+	utest.EqualNow(t, cap(mem), 1600)
 	pool.Free(mem)
 }
 
