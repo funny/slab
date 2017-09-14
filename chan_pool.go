@@ -49,7 +49,7 @@ func NewChanPool(minSize, maxSize, factor, pageSize int) *ChanPool {
 	return pool
 }
 
-func (pool *ChanPool) GetErrChan() <-chan error {
+func (pool *ChanPool) ErrChan() <-chan error {
 	return pool.errChan
 }
 
