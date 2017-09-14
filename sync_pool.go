@@ -20,7 +20,7 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 	for chunkSize = minSize; chunkSize <= maxSize; chunkSize *= factor {
 		n++
 	}
-	if maxSize > chunkSize {
+	if maxSize > int(chunkSize/factor) {
 		n++
 	}
 	pool := &SyncPool{
@@ -51,14 +51,14 @@ func (pool *SyncPool) Alloc(size int) []byte {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				mem := pool.classes[i].Get().(*[]byte)
-				return (*mem)[:size]
+				return (*mem)[:size:size]
 			}
 		}
 	} else if size > pool.maxSize {
 		len := len(pool.classesSize)
 		if size <= pool.classesSize[len-1] {
 			mem := pool.classes[len-1].Get().(*[]byte)
-			return (*mem)[:size]
+			return (*mem)[:size:size]
 		}
 	}
 	return make([]byte, size)
