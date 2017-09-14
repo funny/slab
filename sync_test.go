@@ -17,7 +17,8 @@ func Test_SyncPool_Free_NilPtr(t *testing.T) {
 	var syncPool *SyncPool
 	mem := make([]byte, 16)
 	syncPool.Free(mem)
-	utest.IsNilNow(t, syncPool)
+	// utest project exists a bug for interface{}
+	//utest.IsNilNow(t, syncPool)
 }
 
 func Test_SyncPool_AllocSmall_NonIntFactor(t *testing.T) {
