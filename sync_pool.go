@@ -44,6 +44,9 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
 func (pool *SyncPool) Alloc(size int) []byte {
+	if pool == nil {
+		return nil
+	}
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
@@ -51,12 +54,21 @@ func (pool *SyncPool) Alloc(size int) []byte {
 				return (*mem)[:size]
 			}
 		}
+	} else if size > pool.maxSize {
+		len := len(pool.classesSize)
+		if size <= pool.classesSize[len-1] {
+			mem := pool.classes[len-1].Get().(*[]byte)
+			return (*mem)[:size]
+		}
 	}
 	return make([]byte, size)
 }
 
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *SyncPool) Free(mem []byte) {
+	if pool == nil {
+		return
+	}
 	if size := cap(mem); size <= pool.maxSize {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
@@ -64,5 +76,12 @@ func (pool *SyncPool) Free(mem []byte) {
 				return
 			}
 		}
+	} else if size > pool.maxSize {
+		len := len(pool.classesSize)
+		if size <= pool.classesSize[len-1] {
+			pool.classes[len-1].Put(&mem)
+			return
+		}
 	}
+	return
 }

@@ -6,6 +6,21 @@ import (
 	"github.com/funny/utest"
 )
 
+func Test_SyncPool_NilPtr(t *testing.T) {
+	var syncPool *SyncPool
+	mem := syncPool.Alloc(64)
+	utest.EqualNow(t, cap(mem), 0)
+	utest.EqualNow(t, len(mem), 0)
+}
+
+func Test_SyncPool_AllocSmall_NonIntFactor(t *testing.T) {
+	pool := NewSyncPool(128, 1500, 2)
+	mem := pool.Alloc(1400)
+	utest.EqualNow(t, len(mem), 1400)
+	utest.EqualNow(t, cap(mem), 1400)
+	pool.Free(mem)
+}
+
 func Test_SyncPool_AllocSmall(t *testing.T) {
 	pool := NewSyncPool(128, 1024, 2)
 	mem := pool.Alloc(64)
@@ -48,6 +63,16 @@ func Benchmark_SyncPool_AllocAndFree_512(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			pool.Free(pool.Alloc(512))
+		}
+	})
+}
+
+func Benchmark_SyncPool_AllocAndFree_NonIntFactor(b *testing.B) {
+	pool := NewSyncPool(128, 1500, 2)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			pool.Free(pool.Alloc(1400))
 		}
 	})
 }
