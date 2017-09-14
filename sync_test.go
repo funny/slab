@@ -3,7 +3,7 @@ package slab
 import (
 	"testing"
 
-	"github.com/funny/utest"
+	"github.com/1046102779/utest"
 )
 
 func Test_SyncPool_NilPtr(t *testing.T) {
@@ -18,7 +18,7 @@ func Test_SyncPool_Free_NilPtr(t *testing.T) {
 	mem := make([]byte, 16)
 	syncPool.Free(mem)
 	// utest project exists a bug for interface{}
-	//utest.IsNilNow(t, syncPool)
+	utest.IsNilNow(t, syncPool)
 }
 
 func Test_SyncPool_Alloc_CriticalValue(t *testing.T) {

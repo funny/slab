@@ -3,7 +3,7 @@ package slab
 import (
 	"testing"
 
-	"github.com/funny/utest"
+	"github.com/1046102779/utest"
 )
 
 func Test_LockPool_AllocAndFree(t *testing.T) {

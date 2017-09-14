@@ -3,7 +3,7 @@ package slab
 import (
 	"testing"
 
-	"github.com/funny/utest"
+	"github.com/1046102779/utest"
 )
 
 func Test_ChanPool_AllocAndFree(t *testing.T) {
@@ -21,6 +21,20 @@ func Test_ChanPool_AllocAndFree(t *testing.T) {
 			pool.Free(temp[j])
 		}
 	}
+}
+
+func Test_ChanPool_Alloc_IsNilPtr(t *testing.T) {
+	var pool *ChanPool
+	mem := pool.Alloc(1024)
+	utest.EqualNow(t, cap(mem), 0)
+	utest.EqualNow(t, len(mem), 0)
+	utest.IsNilNow(t, pool)
+}
+
+func Test_ChanPool_Free_IsNilPtr(t *testing.T) {
+	var pool *ChanPool
+	pool.Free(make([]byte, 64))
+	utest.IsNilNow(t, pool)
 }
 
 func Test_ChanPool_AllocSmall(t *testing.T) {
@@ -88,4 +102,14 @@ func Benchmark_ChanPool_AllocAndFree_512(b *testing.B) {
 			pool.Free(pool.Alloc(512))
 		}
 	})
+}
+
+func Test_ClassPool_AllocAndFree_IsNilPtr(t *testing.T) {
+	var class *chanClass
+	mem := make([]byte, 64)
+	class.Push(mem)
+	utest.IsNilNow(t, class)
+	tempMem := class.Pop()
+	utest.EqualNow(t, cap(tempMem), 0)
+	utest.EqualNow(t, cap(tempMem), 0)
 }
