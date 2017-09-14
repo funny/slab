@@ -20,7 +20,7 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 	for chunkSize = minSize; chunkSize <= maxSize; chunkSize *= factor {
 		n++
 	}
-	if maxSize > chunkSize {
+	if maxSize > int(chunkSize/factor) {
 		n++
 	}
 	pool := &SyncPool{
