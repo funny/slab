@@ -35,6 +35,14 @@ func Test_SyncPool_Alloc_NilPtr(t *testing.T) {
 	utest.EqualNow(t, cap(mem), 0)
 }
 
+func Test_SyncPool_AllocSmall_NonIntFactor(t *testing.T) {
+	pool := NewSyncPool(128, 1500, 2)
+	mem := pool.Alloc(1400)
+	utest.EqualNow(t, len(mem), 1400)
+	utest.EqualNow(t, cap(mem), 1400)
+	pool.Free(mem)
+}
+
 func Test_SyncPool_AllocSmall(t *testing.T) {
 	pool := NewSyncPool(128, 1024, 2)
 	mem := pool.Alloc(64)
