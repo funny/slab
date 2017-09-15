@@ -6,6 +6,11 @@ import (
 	"github.com/1046102779/utest"
 )
 
+func Test_SyncPool_ErrChan_NilPtr(t *testing.T) {
+	var pool *SyncPool
+	utest.IsNilNow(t, pool.ErrChan())
+}
+
 func Test_SyncPool_NilPtr(t *testing.T) {
 	var syncPool *SyncPool
 	mem := syncPool.Alloc(64)

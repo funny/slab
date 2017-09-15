@@ -6,6 +6,11 @@ import (
 	"github.com/1046102779/utest"
 )
 
+func Test_AtomPool_ErrChan_NilPtr(t *testing.T) {
+	var pool *AtomPool
+	utest.IsNilNow(t, pool.ErrChan())
+}
+
 func Test_AtomPool_AllocAndFree(t *testing.T) {
 	pool := newAtomPool(128, 64*1024, 2)
 	for i := 0; i < len(pool.classes); i++ {

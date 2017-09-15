@@ -54,6 +54,7 @@ func Test_ChanPool_ErrChan(t *testing.T) {
 	}()
 	return
 }
+
 func Test_ChanPool_AllocSmall(t *testing.T) {
 	pool := newChanPool(128, 1024, 2)
 	mem := pool.Alloc(64)
