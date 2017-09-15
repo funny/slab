@@ -10,11 +10,11 @@ type SyncPool struct {
 	maxSize     int
 }
 
-// NewSyncPool create a sync.Pool base slab allocation memory pool.
+// newSyncPool create a sync.Pool base slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
-func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
+func newSyncPool(minSize, maxSize, factor int) *SyncPool {
 	var chunkSize int
 	n := 0
 	for chunkSize = minSize; chunkSize <= maxSize; chunkSize *= factor {
@@ -40,6 +40,10 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 		chunkSize *= factor
 	}
 	return pool
+}
+
+func (pool *SyncPool) ErrChan() <-chan error {
+	return nil
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.

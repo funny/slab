@@ -14,12 +14,13 @@ type AtomPool struct {
 	maxSize int
 }
 
-// NewAtomPool create a lock-free slab allocation memory pool.
+// newAtomPool create a lock-free slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewAtomPool(minSize, maxSize, factor, pageSize int) *AtomPool {
+func newAtomPool(minSize, maxSize, factor int) *AtomPool {
+	pageSize := 8192 // 8kb
 	pool := &AtomPool{make([]class, 0, 10), minSize, maxSize}
 	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		c := class{
@@ -42,6 +43,10 @@ func NewAtomPool(minSize, maxSize, factor, pageSize int) *AtomPool {
 		pool.classes = append(pool.classes, c)
 	}
 	return pool
+}
+
+func (pool *AtomPool) ErrChan() <-chan error {
+	return nil
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.

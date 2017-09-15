@@ -14,13 +14,14 @@ type ChanPool struct {
 	errChan chan error
 }
 
-// NewChanPool create a chan based slab allocation memory pool.
+// newChanPool create a chan based slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewChanPool(minSize, maxSize, factor, pageSize int) *ChanPool {
+func newChanPool(minSize, maxSize, factor int) *ChanPool {
 	var i int = 0
+	pageSize := 8192 // 8kb
 	pool := &ChanPool{
 		classes: make([]chanClass, 0, 10),
 		minSize: minSize,

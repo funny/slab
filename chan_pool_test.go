@@ -9,7 +9,7 @@ import (
 )
 
 func Test_ChanPool_AllocAndFree(t *testing.T) {
-	pool := NewChanPool(128, 64*1024, 2, 1024*1024)
+	pool := newChanPool(128, 64*1024, 2)
 	for i := 0; i < len(pool.classes); i++ {
 		temp := make([][]byte, len(pool.classes[i].chunks))
 
@@ -40,7 +40,7 @@ func Test_ChanPool_Free_IsNilPtr(t *testing.T) {
 }
 
 func Test_ChanPool_ErrChan(t *testing.T) {
-	pool := NewChanPool(128, 1024, 2, 1024)
+	pool := newChanPool(128, 1024, 2)
 	tick := time.NewTicker(2 * time.Second)
 	go func() {
 		for {
@@ -55,7 +55,7 @@ func Test_ChanPool_ErrChan(t *testing.T) {
 	return
 }
 func Test_ChanPool_AllocSmall(t *testing.T) {
-	pool := NewChanPool(128, 1024, 2, 1024)
+	pool := newChanPool(128, 1024, 2)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
 	utest.EqualNow(t, cap(mem), 128)
@@ -63,7 +63,7 @@ func Test_ChanPool_AllocSmall(t *testing.T) {
 }
 
 func Test_ChanPool_AllocLarge(t *testing.T) {
-	pool := NewChanPool(128, 1024, 2, 1024)
+	pool := newChanPool(128, 1024, 2)
 	mem := pool.Alloc(2048)
 	utest.EqualNow(t, len(mem), 2048)
 	utest.EqualNow(t, cap(mem), 2048)
@@ -71,7 +71,7 @@ func Test_ChanPool_AllocLarge(t *testing.T) {
 }
 
 func Test_ChanPool_DoubleFree(t *testing.T) {
-	pool := NewChanPool(128, 1024, 2, 1024)
+	pool := newChanPool(128, 1024, 2)
 	mem := pool.Alloc(64)
 	go func() {
 		defer func() {
@@ -83,7 +83,7 @@ func Test_ChanPool_DoubleFree(t *testing.T) {
 }
 
 func Test_ChanPool_AllocSlow(t *testing.T) {
-	pool := NewChanPool(128, 1024, 2, 1024)
+	pool := newChanPool(128, 1024, 2)
 	mem := pool.classes[len(pool.classes)-1].Pop()
 	utest.EqualNow(t, cap(mem), 1024)
 
@@ -92,7 +92,7 @@ func Test_ChanPool_AllocSlow(t *testing.T) {
 }
 
 func Benchmark_ChanPool_AllocAndFree_128(b *testing.B) {
-	pool := NewChanPool(128, 1024, 2, 64*1024)
+	pool := newChanPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -102,7 +102,7 @@ func Benchmark_ChanPool_AllocAndFree_128(b *testing.B) {
 }
 
 func Benchmark_ChanPool_AllocAndFree_256(b *testing.B) {
-	pool := NewChanPool(128, 1024, 2, 64*1024)
+	pool := newChanPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -112,7 +112,7 @@ func Benchmark_ChanPool_AllocAndFree_256(b *testing.B) {
 }
 
 func Benchmark_ChanPool_AllocAndFree_512(b *testing.B) {
-	pool := NewChanPool(128, 1024, 2, 64*1024)
+	pool := newChanPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
