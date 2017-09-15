@@ -14,19 +14,27 @@ type AtomPool struct {
 	maxSize int
 }
 
-// NewAtomPool create a lock-free slab allocation memory pool.
+// newAtomPool create a lock-free slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewAtomPool(minSize, maxSize, factor, pageSize int) *AtomPool {
+func newAtomPool(minSize, maxSize, factor int) *AtomPool {
+	pageSize := 8192 // 8kb
 	pool := &AtomPool{make([]class, 0, 10), minSize, maxSize}
 	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		c := class{
 			size:   chunkSize,
 			page:   make([]byte, pageSize),
 			chunks: make([]chunk, pageSize/chunkSize),
-			head:   (1 << 32),
+			/**** desc: if  a class only has one page, and the page's max size is 4GB.
+			***** head:  the first index of unused memory
+			***** [0,0,0,0,5,6,7,8,9,10] , 4/0: used memory, 6/non-0: unused memory
+			***** head = 5
+			***** 主要是通过head和next索引，来移位哪些内存块已经使用，哪些没有使用。使用和未使用内存是连续的
+			***** wonderful design
+			****/
+			head: (1 << 32),
 		}
 		for i := 0; i < len(c.chunks); i++ {
 			chk := &c.chunks[i]
@@ -42,6 +50,10 @@ func NewAtomPool(minSize, maxSize, factor, pageSize int) *AtomPool {
 		pool.classes = append(pool.classes, c)
 	}
 	return pool
+}
+
+func (pool *AtomPool) ErrChan() <-chan error {
+	return nil
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
@@ -94,6 +106,11 @@ func (c *class) Push(mem []byte) {
 		if chk.next != 0 {
 			panic("slab.AtomPool: Double Free")
 		}
+		/******** ABA solution:
+		*******  every time program executes mem operation, it will modify mem value's low bit and
+		******* 32 shift operating solves the bad affect.
+		******* well done!
+		****/
 		chk.aba++
 		new := uint64(i+1)<<32 + uint64(chk.aba)
 		for {
@@ -102,6 +119,7 @@ func (c *class) Push(mem []byte) {
 			if atomic.CompareAndSwapUint64(&c.head, old, new) {
 				break
 			}
+			// if cas executes failed. it will actively schedule other goroutines, waiting next time to running once again
 			runtime.Gosched()
 		}
 	}
@@ -110,9 +128,13 @@ func (c *class) Push(mem []byte) {
 func (c *class) Pop() []byte {
 	for {
 		old := atomic.LoadUint64(&c.head)
+		/* i think it won't be running...
+		***** because c.head's min index value = 1
+		***** if at first free and alloc, the free function will be panic `slab.AtomPool: Double Free`
 		if old == 0 {
 			return nil
 		}
+		*/
 		chk := &c.chunks[old>>32-1]
 		nxt := atomic.LoadUint64(&chk.next)
 		if atomic.CompareAndSwapUint64(&c.head, old, nxt) {

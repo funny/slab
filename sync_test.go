@@ -22,7 +22,7 @@ func Test_SyncPool_Free_NilPtr(t *testing.T) {
 }
 
 func Test_SyncPool_Alloc_CriticalValue(t *testing.T) {
-	pool := NewSyncPool(128, 1000, 2) // test: maxSize > ( last chunkSize = 512 )
+	pool := newSyncPool(128, 1000, 2) // test: maxSize > ( last chunkSize = 512 )
 	mem := pool.Alloc(1023)
 	utest.EqualNow(t, len(mem), 1023)
 	utest.EqualNow(t, cap(mem), 1023)
@@ -30,7 +30,7 @@ func Test_SyncPool_Alloc_CriticalValue(t *testing.T) {
 }
 
 func Test_SyncPool_AllocSmall_NonIntFactor(t *testing.T) {
-	pool := NewSyncPool(128, 1500, 2)
+	pool := newSyncPool(128, 1500, 2)
 	mem := pool.Alloc(1800)
 	utest.EqualNow(t, len(mem), 1800)
 	utest.EqualNow(t, cap(mem), 1800)
@@ -45,7 +45,7 @@ func Test_SyncPool_Alloc_NilPtr(t *testing.T) {
 }
 
 func Test_SyncPool_AllocSmall(t *testing.T) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
 	utest.EqualNow(t, cap(mem), 64)
@@ -53,7 +53,7 @@ func Test_SyncPool_AllocSmall(t *testing.T) {
 }
 
 func Test_SyncPool_AllocLarge(t *testing.T) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	mem := pool.Alloc(2048)
 	utest.EqualNow(t, len(mem), 2048)
 	utest.EqualNow(t, cap(mem), 2048)
@@ -61,14 +61,14 @@ func Test_SyncPool_AllocLarge(t *testing.T) {
 }
 
 func Test_SyncPool_Alloc_BeyondSize(t *testing.T) {
-	pool := NewSyncPool(128, 1500, 2)
+	pool := newSyncPool(128, 1500, 2)
 	mem := pool.Alloc(2500)
 	utest.EqualNow(t, len(mem), 2500)
 	utest.EqualNow(t, cap(mem), 2500)
 	pool.Free(mem)
 }
 func Test_SyncPool_Alloc_LastElemSize(t *testing.T) {
-	pool := NewSyncPool(128, 1500, 2) // maxSize< 1600  <last elem size
+	pool := newSyncPool(128, 1500, 2) // maxSize< 1600  <last elem size
 	mem := pool.Alloc(1600)
 	utest.EqualNow(t, len(mem), 1600)
 	utest.EqualNow(t, cap(mem), 1600)
@@ -76,7 +76,7 @@ func Test_SyncPool_Alloc_LastElemSize(t *testing.T) {
 }
 
 func Test_SyncPool_AllocLastElem_NonIntFactor(t *testing.T) {
-	pool := NewSyncPool(128, 1500, 2)
+	pool := newSyncPool(128, 1500, 2)
 	mem := pool.Alloc(1800)
 	utest.EqualNow(t, len(mem), 1800)
 	utest.EqualNow(t, cap(mem), 1800)
@@ -84,7 +84,7 @@ func Test_SyncPool_AllocLastElem_NonIntFactor(t *testing.T) {
 }
 
 func Benchmark_SyncPool_AllocAndFree_128(b *testing.B) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -94,7 +94,7 @@ func Benchmark_SyncPool_AllocAndFree_128(b *testing.B) {
 }
 
 func Benchmark_SyncPool_AllocAndFree_256(b *testing.B) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -104,7 +104,7 @@ func Benchmark_SyncPool_AllocAndFree_256(b *testing.B) {
 }
 
 func Benchmark_SyncPool_AllocAndFree_512(b *testing.B) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -114,7 +114,7 @@ func Benchmark_SyncPool_AllocAndFree_512(b *testing.B) {
 }
 
 func Benchmark_SyncPool_AllocAndFree_NonIntFactor(b *testing.B) {
-	pool := NewSyncPool(128, 1500, 2)
+	pool := newSyncPool(128, 1500, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -124,7 +124,7 @@ func Benchmark_SyncPool_AllocAndFree_NonIntFactor(b *testing.B) {
 }
 
 func Benchmark_SyncPool_CacheMiss_128(b *testing.B) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -134,7 +134,7 @@ func Benchmark_SyncPool_CacheMiss_128(b *testing.B) {
 }
 
 func Benchmark_SyncPool_CacheMiss_256(b *testing.B) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -144,7 +144,7 @@ func Benchmark_SyncPool_CacheMiss_256(b *testing.B) {
 }
 
 func Benchmark_SyncPool_CacheMiss_512(b *testing.B) {
-	pool := NewSyncPool(128, 1024, 2)
+	pool := newSyncPool(128, 1024, 2)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
