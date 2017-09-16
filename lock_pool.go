@@ -13,12 +13,13 @@ type LockPool struct {
 	maxSize int
 }
 
-// NewLockPool create a lock-free slab allocation memory pool.
+// newLockPool create a lock-free slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewLockPool(minSize, maxSize, factor, pageSize int) *LockPool {
+func newLockPool(minSize, maxSize, factor int) *LockPool {
+	pageSize := 8192 // 8kb
 	n := 0
 	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		n++
@@ -47,15 +48,18 @@ func NewLockPool(minSize, maxSize, factor, pageSize int) *LockPool {
 	}
 	return pool
 }
+func (pool *LockPool) ErrChan() <-chan error {
+	return nil
+}
 
 // LockPool try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
 func (pool *LockPool) Alloc(size int) []byte {
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
-				mem := pool.classes[i].Pop()
+				mem := pool.classes[i].pop()
 				if mem != nil {
-					return mem[:size]
+					return mem[:size:size]
 				}
 				break
 			}
@@ -69,7 +73,7 @@ func (pool *LockPool) Free(mem []byte) {
 	size := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
 		if pool.classes[i].size == size {
-			pool.classes[i].Push(mem)
+			pool.classes[i].push(mem)
 			break
 		}
 	}
@@ -86,7 +90,7 @@ type lockClass struct {
 	tail      int
 }
 
-func (c *lockClass) Push(mem []byte) {
+func (c *lockClass) push(mem []byte) {
 	ptr := (*reflect.SliceHeader)(unsafe.Pointer(&mem)).Data
 	if c.pageBegin <= ptr && ptr <= c.pageEnd {
 		c.Lock()
@@ -100,7 +104,7 @@ func (c *lockClass) Push(mem []byte) {
 	}
 }
 
-func (c *lockClass) Pop() []byte {
+func (c *lockClass) pop() []byte {
 	var mem []byte
 	c.Lock()
 	if c.head <= c.tail {

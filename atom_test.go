@@ -34,7 +34,7 @@ func Test_AtomPool_AllocSmall(t *testing.T) {
 	pool := newAtomPool(128, 1024, 2)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
-	utest.EqualNow(t, cap(mem), 128)
+	utest.EqualNow(t, cap(mem), 64)
 	pool.Free(mem)
 }
 
@@ -48,7 +48,7 @@ func Test_AtomPool_AllocLarge(t *testing.T) {
 
 func Test_AtomPool_DoubleFree(t *testing.T) {
 	pool := newAtomPool(128, 1024, 2)
-	mem := pool.Alloc(64)
+	mem := pool.Alloc(256)
 	go func() {
 		defer func() {
 			utest.NotNilNow(t, recover())
@@ -60,7 +60,7 @@ func Test_AtomPool_DoubleFree(t *testing.T) {
 
 func Test_AtomPool_AllocSlow(t *testing.T) {
 	pool := newAtomPool(128, 1024, 2)
-	mem := pool.classes[len(pool.classes)-1].Pop()
+	mem := pool.classes[len(pool.classes)-1].pop()
 	utest.EqualNow(t, cap(mem), 1024)
 	//utest.Assert(t, pool.classes[len(pool.classes)-1].head == 0)
 

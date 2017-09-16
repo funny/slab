@@ -55,11 +55,18 @@ func Test_ChanPool_ErrChan(t *testing.T) {
 	return
 }
 
+func Test_ChanPool_Alloc_SysMem(t *testing.T) {
+	pool := newChanPool(128, 1500, 2)
+	mem := pool.Alloc(1024) // slab pool
+	mem = pool.Alloc(1024)  // system memory
+	pool.Free(mem)
+}
+
 func Test_ChanPool_AllocSmall(t *testing.T) {
 	pool := newChanPool(128, 1024, 2)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
-	utest.EqualNow(t, cap(mem), 128)
+	utest.EqualNow(t, cap(mem), 64)
 	pool.Free(mem)
 }
 
@@ -85,7 +92,7 @@ func Test_ChanPool_DoubleFree(t *testing.T) {
 
 func Test_ChanPool_AllocSlow(t *testing.T) {
 	pool := newChanPool(128, 1024, 2)
-	mem := pool.classes[len(pool.classes)-1].Pop()
+	mem := pool.classes[len(pool.classes)-1].pop()
 	utest.EqualNow(t, cap(mem), 1024)
 
 	mem = pool.Alloc(1024)
@@ -125,9 +132,9 @@ func Benchmark_ChanPool_AllocAndFree_512(b *testing.B) {
 func Test_ClassPool_AllocAndFree_IsNilPtr(t *testing.T) {
 	var class *chanClass
 	mem := make([]byte, 64)
-	class.Push(mem)
+	class.push(mem)
 	utest.IsNilNow(t, class)
-	tempMem := class.Pop()
+	tempMem := class.pop()
 	utest.EqualNow(t, cap(tempMem), 0)
 	utest.EqualNow(t, cap(tempMem), 0)
 }

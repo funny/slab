@@ -62,9 +62,9 @@ func (pool *ChanPool) Alloc(size int) []byte {
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
-				mem := pool.classes[i].Pop()
+				mem := pool.classes[i].pop()
 				if mem != nil {
-					return mem[:size]
+					return mem[:size:size]
 				}
 				break
 			}
@@ -81,7 +81,7 @@ func (pool *ChanPool) Free(mem []byte) {
 	size := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
 		if pool.classes[i].size == size {
-			pool.classes[i].Push(mem)
+			pool.classes[i].push(mem)
 			break
 		}
 	}
@@ -96,7 +96,7 @@ type chanClass struct {
 	chanPool  *ChanPool
 }
 
-func (c *chanClass) Push(mem []byte) {
+func (c *chanClass) push(mem []byte) {
 	if c == nil {
 		return
 	}
@@ -108,7 +108,7 @@ func (c *chanClass) Push(mem []byte) {
 	return
 }
 
-func (c *chanClass) Pop() []byte {
+func (c *chanClass) pop() []byte {
 	if c == nil {
 		return nil
 	}

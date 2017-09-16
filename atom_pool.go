@@ -61,9 +61,9 @@ func (pool *AtomPool) Alloc(size int) []byte {
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
-				mem := pool.classes[i].Pop()
+				mem := pool.classes[i].pop()
 				if mem != nil {
-					return mem[:size]
+					return mem[:size:size]
 				}
 				break
 			}
@@ -77,7 +77,7 @@ func (pool *AtomPool) Free(mem []byte) {
 	size := cap(mem)
 	for i := 0; i < len(pool.classes); i++ {
 		if pool.classes[i].size == size {
-			pool.classes[i].Push(mem)
+			pool.classes[i].push(mem)
 			break
 		}
 	}
@@ -98,7 +98,7 @@ type chunk struct {
 	next uint64
 }
 
-func (c *class) Push(mem []byte) {
+func (c *class) push(mem []byte) {
 	ptr := (*reflect.SliceHeader)(unsafe.Pointer(&mem)).Data
 	if c.pageBegin <= ptr && ptr <= c.pageEnd {
 		i := (ptr - c.pageBegin) / uintptr(c.size)
@@ -125,7 +125,7 @@ func (c *class) Push(mem []byte) {
 	}
 }
 
-func (c *class) Pop() []byte {
+func (c *class) pop() []byte {
 	for {
 		old := atomic.LoadUint64(&c.head)
 		/* i think it won't be running...
