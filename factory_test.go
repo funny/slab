@@ -19,6 +19,9 @@ func Test_Factory_Slab_NewInstace(t *testing.T) {
 	abpool3.Free(abpool3.Alloc(512))
 	utest.NotNilNow(t, abpool3)
 
-	abpool4, _ := NewSlabPool(4 /*slab pool type*/, 64, 1024, 2)
-	utest.IsNilNow(t, abpool4)
+	abpool4, _ := NewSlabPool(TYPE__SLAB_POOL__LOCK, 64, 1024, 2)
+	utest.NotNilNow(t, abpool4)
+
+	abpool5, _ := NewSlabPool(5 /**unsupported slab pool type**/, 64, 1024, 2)
+	utest.IsNilNow(t, abpool5)
 }
