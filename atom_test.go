@@ -46,6 +46,14 @@ func Test_AtomPool_AllocLarge(t *testing.T) {
 	pool.Free(mem)
 }
 
+func Test_AtomPool_AllocBeyondMaxSize(t *testing.T) {
+	pool := newAtomPool(128, 1500, 2) // the last elem size is 2048
+	mem := pool.Alloc(1800)
+	utest.EqualNow(t, len(mem), 1800)
+	utest.EqualNow(t, cap(mem), 1800)
+	pool.Free(mem)
+}
+
 func Test_AtomPool_DoubleFree(t *testing.T) {
 	pool := newAtomPool(128, 1024, 2)
 	mem := pool.Alloc(256)

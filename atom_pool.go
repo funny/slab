@@ -20,35 +20,50 @@ type AtomPool struct {
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
 func newAtomPool(minSize, maxSize, factor int) *AtomPool {
-	pageSize := 8192 // 8kb
-	pool := &AtomPool{make([]class, 0, 10), minSize, maxSize}
-	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
-		c := class{
-			size:   chunkSize,
-			page:   make([]byte, pageSize),
-			chunks: make([]chunk, pageSize/chunkSize),
-			/**** desc: if  a class only has one page, and the page's max size is 4GB.
-			***** head:  the first index of unused memory
-			***** [0,0,0,0,5,6,7,8,9,10] , 4/0: used memory, 6/non-0: unused memory
-			***** head = 5
-			***** 主要是通过head和next索引，来移位哪些内存块已经使用，哪些没有使用。使用和未使用内存是连续的
-			***** wonderful design
-			****/
-			head: (1 << 32),
-		}
-		for i := 0; i < len(c.chunks); i++ {
-			chk := &c.chunks[i]
+	var (
+		chunkSize int = minSize
+		pageSize  int = 8192 // 8kb
+		n         int
+	)
+	for ; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
+		n++
+	}
+	if maxSize > int(chunkSize/factor) && maxSize <= pageSize {
+		n++
+	}
+	pool := &AtomPool{
+		classes: make([]class, n),
+		minSize: minSize,
+		maxSize: maxSize,
+	}
+	chunkSize = minSize
+	for i := 0; i < n; i++ {
+		pool.classes[i].size = chunkSize
+		pool.classes[i].page = make([]byte, pageSize)
+		pool.classes[i].chunks = make([]chunk, pageSize/chunkSize)
+		/**** desc: if  a class only has one page, and the page's max size is 4GB.
+		***** head:  the first index of unused memory
+		***** [0,0,0,0,5,6,7,8,9,10] , 4/0: used memory, 6/non-0: unused memory
+		***** head = 5
+		***** 主要是通过head和next索引，来移位哪些内存块已经使用，哪些没有使用。使用和未使用内存是连续的
+		***** wonderful design
+		****/
+		pool.classes[i].head = (1 << 32)
+		for j := 0; j < len(pool.classes[i].chunks); j++ {
+			chk := &pool.classes[i].chunks[j]
 			// lock down the capacity to protect append operation
-			chk.mem = c.page[i*chunkSize : (i+1)*chunkSize : (i+1)*chunkSize]
-			if i < len(c.chunks)-1 {
-				chk.next = uint64(i+1+1 /* index start from 1 */) << 32
+			chk.mem = pool.classes[i].page[j*chunkSize : (j+1)*chunkSize : (j+1)*chunkSize]
+			if j < len(pool.classes[i].chunks)-1 {
+				chk.next = uint64(j+1+1 /* index start from 1 */) << 32
 			} else {
-				c.pageBegin = uintptr(unsafe.Pointer(&c.page[0]))
-				c.pageEnd = uintptr(unsafe.Pointer(&chk.mem[0]))
+				pool.classes[i].pageBegin = uintptr(unsafe.Pointer(&pool.classes[i].page[0]))
+				pool.classes[i].pageEnd = uintptr(unsafe.Pointer(&chk.mem[0]))
 			}
 		}
-		pool.classes = append(pool.classes, c)
+
+		chunkSize *= factor
 	}
+
 	return pool
 }
 
@@ -68,6 +83,14 @@ func (pool *AtomPool) Alloc(size int) []byte {
 				break
 			}
 		}
+	} else {
+		len := len(pool.classes)
+		if size <= pool.classes[len-1].size {
+			mem := pool.classes[len-1].pop()
+			if mem != nil {
+				return mem[:size:size]
+			}
+		}
 	}
 	return make([]byte, size)
 }
@@ -75,12 +98,20 @@ func (pool *AtomPool) Alloc(size int) []byte {
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *AtomPool) Free(mem []byte) {
 	size := cap(mem)
-	for i := 0; i < len(pool.classes); i++ {
-		if pool.classes[i].size == size {
-			pool.classes[i].push(mem)
-			break
+	if size <= pool.maxSize {
+		for i := 0; i < len(pool.classes); i++ {
+			if pool.classes[i].size >= size {
+				pool.classes[i].push(mem)
+				break
+			}
+		}
+	} else {
+		len := len(pool.classes)
+		if size <= pool.classes[len-1].size {
+			pool.classes[len-1].push(mem)
 		}
 	}
+	return
 }
 
 type class struct {

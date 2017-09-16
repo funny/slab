@@ -15,9 +15,11 @@ type SyncPool struct {
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 func newSyncPool(minSize, maxSize, factor int) *SyncPool {
-	var chunkSize int
-	n := 0
-	for chunkSize = minSize; chunkSize <= maxSize; chunkSize *= factor {
+	var (
+		chunkSize int = minSize
+		n         int = 0
+	)
+	for ; chunkSize <= maxSize; chunkSize *= factor {
 		n++
 	}
 	if maxSize > int(chunkSize/factor) {

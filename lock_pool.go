@@ -19,35 +19,46 @@ type LockPool struct {
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
 func newLockPool(minSize, maxSize, factor int) *LockPool {
-	pageSize := 8192 // 8kb
-	n := 0
-	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
+	var (
+		chunkSize int = minSize
+		pageSize  int = 8192 // 8kb
+		n         int = 0
+	)
+	for ; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		n++
 	}
-	pool := &LockPool{make([]lockClass, n), minSize, maxSize}
+	if maxSize > int(chunkSize/factor) && maxSize <= pageSize {
+		n++
+	}
+	pool := &LockPool{
+		classes: make([]lockClass, n),
+		minSize: minSize,
+		maxSize: maxSize,
+	}
 
-	n = 0
-	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
-		c := &pool.classes[n]
+	chunkSize = minSize
+	for i := 0; i < n; i++ {
+		c := &pool.classes[i]
 		c.size = chunkSize
 		c.page = make([]byte, pageSize)
 		c.chunks = make([][]byte, pageSize/chunkSize)
 		c.head = 0
 		c.tail = pageSize/chunkSize - 1
 
-		for i := 0; i < len(c.chunks); i++ {
+		for j := 0; j < len(c.chunks); j++ {
 			// lock down the capacity to protect append operation
-			c.chunks[i] = c.page[i*chunkSize : (i+1)*chunkSize : (i+1)*chunkSize]
-			if i == len(c.chunks)-1 {
+			c.chunks[j] = c.page[j*chunkSize : (j+1)*chunkSize : (j+1)*chunkSize]
+			if j == len(c.chunks)-1 {
 				c.pageBegin = uintptr(unsafe.Pointer(&c.page[0]))
-				c.pageEnd = uintptr(unsafe.Pointer(&c.chunks[i][0]))
+				c.pageEnd = uintptr(unsafe.Pointer(&c.chunks[j][0]))
 			}
 		}
 
-		n++
+		chunkSize *= factor
 	}
 	return pool
 }
+
 func (pool *LockPool) ErrChan() <-chan error {
 	return nil
 }
@@ -64,6 +75,14 @@ func (pool *LockPool) Alloc(size int) []byte {
 				break
 			}
 		}
+	} else { // the last elem
+		len := len(pool.classes)
+		if size <= pool.classes[len-1].size {
+			mem := pool.classes[len-1].pop()
+			if mem != nil {
+				return mem[:size:size]
+			}
+		}
 	}
 	return make([]byte, size)
 }
@@ -71,12 +90,20 @@ func (pool *LockPool) Alloc(size int) []byte {
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *LockPool) Free(mem []byte) {
 	size := cap(mem)
-	for i := 0; i < len(pool.classes); i++ {
-		if pool.classes[i].size == size {
-			pool.classes[i].push(mem)
-			break
+	if size <= pool.maxSize {
+		for i := 0; i < len(pool.classes); i++ {
+			if pool.classes[i].size >= size {
+				pool.classes[i].push(mem)
+				break
+			}
+		}
+	} else {
+		len := len(pool.classes)
+		if size <= pool.classes[len-1].size {
+			pool.classes[len-1].push(mem)
 		}
 	}
+	return
 }
 
 type lockClass struct {
@@ -96,7 +123,9 @@ func (c *lockClass) push(mem []byte) {
 		c.Lock()
 		c.tail++
 		n := c.tail % len(c.chunks)
+		// if the panic is received by recover, mutex lock will be deadlock !!
 		if c.chunks[n] != nil {
+			c.Unlock()
 			panic("slab.LockPool: Double Free")
 		}
 		c.chunks[n] = mem
