@@ -56,10 +56,11 @@ func Test_ChanPool_ErrChan(t *testing.T) {
 }
 
 func Test_ChanPool_Alloc_SysMem(t *testing.T) {
-	pool := newChanPool(128, 1500, 2)
-	mem := pool.Alloc(1024) // slab pool
-	mem = pool.Alloc(1024)  // system memory
+	pool := newChanPool(128, 8192, 2)
+	mem := pool.Alloc(8192) // slab pool
+	mem = pool.Alloc(8192)  // system memory & nil
 	pool.Free(mem)
+	pool.Free(mem) // errChan
 }
 
 func Test_ChanPool_AllocSmall(t *testing.T) {
