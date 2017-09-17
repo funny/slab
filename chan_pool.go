@@ -67,22 +67,13 @@ func (pool *ChanPool) Alloc(size int) []byte {
 	if pool == nil {
 		return nil
 	}
-	if size <= pool.maxSize {
+	if size <= pool.classes[len(pool.classes)-1].size {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
 				mem := pool.classes[i].pop()
-				if mem != nil {
+				if cap(mem) > 0 {
 					return mem[:size:size]
 				}
-				break
-			}
-		}
-	} else {
-		len := len(pool.classes)
-		if size <= pool.classes[len-1].size {
-			mem := pool.classes[len-1].pop()
-			if mem != nil {
-				return mem[:size:size]
 			}
 		}
 	}
@@ -95,17 +86,12 @@ func (pool *ChanPool) Free(mem []byte) {
 		return
 	}
 	size := cap(mem)
-	if size <= pool.maxSize {
+	if size <= pool.classes[len(pool.classes)-1].size {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
 				pool.classes[i].push(mem)
 				break
 			}
-		}
-	} else {
-		len := len(pool.classes)
-		if size <= pool.classes[len-1].size {
-			pool.classes[len-1].pop()
 		}
 	}
 	return

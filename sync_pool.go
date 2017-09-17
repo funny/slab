@@ -53,18 +53,12 @@ func (pool *SyncPool) Alloc(size int) []byte {
 	if pool == nil {
 		return nil
 	}
-	if size <= pool.maxSize {
+	if size <= pool.classesSize[len(pool.classesSize)-1] {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				mem := pool.classes[i].Get().(*[]byte)
 				return (*mem)[:size:size]
 			}
-		}
-	} else if size > pool.maxSize {
-		len := len(pool.classesSize)
-		if size <= pool.classesSize[len-1] {
-			mem := pool.classes[len-1].Get().(*[]byte)
-			return (*mem)[:size:size]
 		}
 	}
 	return make([]byte, size)
@@ -75,18 +69,13 @@ func (pool *SyncPool) Free(mem []byte) {
 	if pool == nil {
 		return
 	}
-	if size := cap(mem); size <= pool.maxSize {
+	size := cap(mem)
+	if size <= pool.classesSize[len(pool.classesSize)-1] {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				pool.classes[i].Put(&mem)
-				return
+				break
 			}
-		}
-	} else if size > pool.maxSize {
-		len := len(pool.classesSize)
-		if size <= pool.classesSize[len-1] {
-			pool.classes[len-1].Put(&mem)
-			return
 		}
 	}
 	return
