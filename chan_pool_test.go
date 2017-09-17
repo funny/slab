@@ -64,7 +64,7 @@ func Test_ChanPool_AllocBeyondMaxSize(t *testing.T) {
 }
 
 func Test_ChanPool_Alloc_SysMem(t *testing.T) {
-	pool := newChanPool(128, 8192, 2, 1024*1024)
+	pool := newChanPool(128, 8192, 2, 8192)
 	mem := pool.Alloc(8192) // slab pool
 	mem = pool.Alloc(8192)  // system memory & nil
 	pool.Free(mem)
