@@ -10,6 +10,7 @@ func Test_AtomPool_ErrChan_NilPtr(t *testing.T) {
 	var pool *AtomPool
 	utest.IsNilNow(t, pool.ErrChan())
 	utest.IsNilNow(t, pool.Alloc(64))
+	pool.Free(make([]byte, 64))
 }
 
 func Test_AtomPool_AllocAndFree(t *testing.T) {
