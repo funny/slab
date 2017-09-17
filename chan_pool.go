@@ -19,11 +19,11 @@ type ChanPool struct {
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func newChanPool(minSize, maxSize, factor int) *ChanPool {
+func newChanPool(minSize, maxSize, factor int, pageSize int) *ChanPool {
 	var (
 		chunkSize int = minSize
 		n         int = 0
-		pageSize  int = 8192 // 8kb
+		//pageSize  int = 8192 // 8kb
 	)
 	for ; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		n++

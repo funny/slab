@@ -18,11 +18,11 @@ type LockPool struct {
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func newLockPool(minSize, maxSize, factor int) *LockPool {
+func newLockPool(minSize, maxSize, factor int, pageSize int) *LockPool {
 	var (
 		chunkSize int = minSize
-		pageSize  int = 8192 // 8kb
 		n         int = 0
+		//pageSize  int = 8192 // 8kb
 	)
 	for ; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		n++

@@ -16,7 +16,12 @@ type Slab interface {
 	ErrChan() <-chan error
 }
 
-func NewSlabPool(typ int16, minSize int, maxSize int, factor int) (Slab, error) {
+func NewSlabPool(
+	typ int16,
+	minSize int,
+	maxSize int,
+	factor int,
+	pageSize int) (Slab, error) {
 	var (
 		abpool Slab
 		err    error
@@ -25,11 +30,11 @@ func NewSlabPool(typ int16, minSize int, maxSize int, factor int) (Slab, error) 
 	case TYPE__SLAB_POOL__SYNC:
 		abpool = newSyncPool(minSize, maxSize, factor)
 	case TYPE__SLAB_POOL__ATOM:
-		abpool = newAtomPool(minSize, maxSize, factor)
+		abpool = newAtomPool(minSize, maxSize, factor, pageSize)
 	case TYPE__SLAB_POOL__CHAN:
-		abpool = newChanPool(minSize, maxSize, factor)
+		abpool = newChanPool(minSize, maxSize, factor, pageSize)
 	case TYPE__SLAB_POOL__LOCK:
-		abpool = newLockPool(minSize, maxSize, factor)
+		abpool = newLockPool(minSize, maxSize, factor, pageSize)
 	default:
 		err = errors.Errorf("unsupport type: [%d] slab pool!!", typ)
 	}

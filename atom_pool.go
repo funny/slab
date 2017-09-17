@@ -19,11 +19,11 @@ type AtomPool struct {
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func newAtomPool(minSize, maxSize, factor int) *AtomPool {
+func newAtomPool(minSize, maxSize, factor int, pageSize int) *AtomPool {
 	var (
 		chunkSize int = minSize
-		pageSize  int = 8192 // 8kb
-		n         int
+		//pageSize  int = 8192 // 8kb
+		n int
 	)
 	for ; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
 		n++

@@ -12,6 +12,7 @@ Usage
 =====
 Slab pool supports sync pool, chan pool, unlock pool and lock pool types.
 
+```go
 const (
 	// 10: sync pool, 20: chan pool, 30: atom pool; 40: lock pool
 	TYPE__SLAB_POOL__SYNC = 10
@@ -19,6 +20,7 @@ const (
 	TYPE__SLAB_POOL__ATOM = 30 // no lock
 	TYPE__SLAB_POOL__LOCK = 40 // lock
 )
+```
 
 Use lock-free memory pool:
 
@@ -28,6 +30,7 @@ pool := slab.NewSlabPool(
 	64,          // The smallest chunk size is 64B.
 	64 * 1024,   // The largest chunk size is 64KB.
 	2,           // Power of 2 growth in chunk size.
+    1024*1024,   // Each slab will be 1MB in size. if the slab pool is sync pool, the param is invalid.
 )
 
 buf1 := pool.Alloc(64)
@@ -35,6 +38,8 @@ buf1 := pool.Alloc(64)
     ... use the buf ...
 	
 pool.Free(buf)
+
+if slab pool is chan type, pool.ErrChan() method returns <-chan error to catch chan err ovrflow.
 ```
 
 

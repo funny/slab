@@ -12,7 +12,7 @@ func Test_LockPool_ErrChan_NilPtr(t *testing.T) {
 }
 
 func Test_LockPool_AllocAndFree(t *testing.T) {
-	pool := newLockPool(128, 64*1024, 2)
+	pool := newLockPool(128, 64*1024, 2, 1024*1024)
 	for i := 0; i < len(pool.classes); i++ {
 		temp := make([][]byte, len(pool.classes[i].chunks))
 
@@ -29,7 +29,7 @@ func Test_LockPool_AllocAndFree(t *testing.T) {
 }
 
 func Test_LockPool_AllocSmall(t *testing.T) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
 	utest.EqualNow(t, cap(mem), 64)
@@ -37,7 +37,7 @@ func Test_LockPool_AllocSmall(t *testing.T) {
 }
 
 func Test_LockPool_AllocLarge(t *testing.T) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	mem := pool.Alloc(2048)
 	utest.EqualNow(t, len(mem), 2048)
 	utest.EqualNow(t, cap(mem), 2048)
@@ -45,7 +45,7 @@ func Test_LockPool_AllocLarge(t *testing.T) {
 }
 
 func Test_LockPool_AllocBeyondMaxSize(t *testing.T) {
-	pool := newLockPool(128, 1500, 2) // the last elem size is 2048
+	pool := newLockPool(128, 1500, 2, 1024*1024) // the last elem size is 2048
 	mem := pool.Alloc(1800)
 	utest.EqualNow(t, len(mem), 1800)
 	utest.EqualNow(t, cap(mem), 1800)
@@ -53,7 +53,7 @@ func Test_LockPool_AllocBeyondMaxSize(t *testing.T) {
 }
 
 func Test_LockPool_DoubleFree(t *testing.T) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	mem := pool.Alloc(256)
 	go func() {
 		defer func() {
@@ -65,7 +65,7 @@ func Test_LockPool_DoubleFree(t *testing.T) {
 }
 
 func Test_LockPool_AllocSlow(t *testing.T) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	mem := pool.classes[len(pool.classes)-1].pop()
 	utest.EqualNow(t, cap(mem), 1024)
 
@@ -74,7 +74,7 @@ func Test_LockPool_AllocSlow(t *testing.T) {
 }
 
 func Benchmark_LockPool_AllocAndFree_128(b *testing.B) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -84,7 +84,7 @@ func Benchmark_LockPool_AllocAndFree_128(b *testing.B) {
 }
 
 func Benchmark_LockPool_AllocAndFree_256(b *testing.B) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -94,7 +94,7 @@ func Benchmark_LockPool_AllocAndFree_256(b *testing.B) {
 }
 
 func Benchmark_LockPool_AllocAndFree_512(b *testing.B) {
-	pool := newLockPool(128, 1024, 2)
+	pool := newLockPool(128, 1024, 2, 1024*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
