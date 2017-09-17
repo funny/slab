@@ -3,11 +3,18 @@ package slab
 import (
 	"testing"
 
-	"github.com/funny/utest"
+	"github.com/1046102779/utest"
 )
 
+func Test_AtomPool_ErrChan_NilPtr(t *testing.T) {
+	var pool *AtomPool
+	utest.IsNilNow(t, pool.ErrChan())
+	utest.IsNilNow(t, pool.Alloc(64))
+	pool.Free(make([]byte, 64))
+}
+
 func Test_AtomPool_AllocAndFree(t *testing.T) {
-	pool := NewAtomPool(128, 64*1024, 2, 1024*1024)
+	pool := newAtomPool(128, 64*1024, 2, 1024*1024)
 	for i := 0; i < len(pool.classes); i++ {
 		temp := make([][]byte, len(pool.classes[i].chunks))
 
@@ -26,24 +33,32 @@ func Test_AtomPool_AllocAndFree(t *testing.T) {
 }
 
 func Test_AtomPool_AllocSmall(t *testing.T) {
-	pool := NewAtomPool(128, 1024, 2, 1024)
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
 	mem := pool.Alloc(64)
 	utest.EqualNow(t, len(mem), 64)
-	utest.EqualNow(t, cap(mem), 128)
+	utest.EqualNow(t, cap(mem), 64)
 	pool.Free(mem)
 }
 
 func Test_AtomPool_AllocLarge(t *testing.T) {
-	pool := NewAtomPool(128, 1024, 2, 1024)
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
 	mem := pool.Alloc(2048)
 	utest.EqualNow(t, len(mem), 2048)
 	utest.EqualNow(t, cap(mem), 2048)
 	pool.Free(mem)
 }
 
+func Test_AtomPool_AllocBeyondMaxSize(t *testing.T) {
+	pool := newAtomPool(128, 1500, 2, 1024*1024) // the last elem size is 2048
+	mem := pool.Alloc(1800)
+	utest.EqualNow(t, len(mem), 1800)
+	utest.EqualNow(t, cap(mem), 1800)
+	pool.Free(mem)
+}
+
 func Test_AtomPool_DoubleFree(t *testing.T) {
-	pool := NewAtomPool(128, 1024, 2, 1024)
-	mem := pool.Alloc(64)
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
+	mem := pool.Alloc(256)
 	go func() {
 		defer func() {
 			utest.NotNilNow(t, recover())
@@ -54,17 +69,17 @@ func Test_AtomPool_DoubleFree(t *testing.T) {
 }
 
 func Test_AtomPool_AllocSlow(t *testing.T) {
-	pool := NewAtomPool(128, 1024, 2, 1024)
-	mem := pool.classes[len(pool.classes)-1].Pop()
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
+	mem := pool.classes[len(pool.classes)-1].pop()
 	utest.EqualNow(t, cap(mem), 1024)
-	utest.Assert(t, pool.classes[len(pool.classes)-1].head == 0)
+	//utest.Assert(t, pool.classes[len(pool.classes)-1].head == 0)
 
 	mem = pool.Alloc(1024)
 	utest.EqualNow(t, cap(mem), 1024)
 }
 
 func Benchmark_AtomPool_AllocAndFree_128(b *testing.B) {
-	pool := NewAtomPool(128, 1024, 2, 64*1024)
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -74,7 +89,7 @@ func Benchmark_AtomPool_AllocAndFree_128(b *testing.B) {
 }
 
 func Benchmark_AtomPool_AllocAndFree_256(b *testing.B) {
-	pool := NewAtomPool(128, 1024, 2, 64*1024)
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -84,7 +99,7 @@ func Benchmark_AtomPool_AllocAndFree_256(b *testing.B) {
 }
 
 func Benchmark_AtomPool_AllocAndFree_512(b *testing.B) {
-	pool := NewAtomPool(128, 1024, 2, 64*1024)
+	pool := newAtomPool(128, 1024, 2, 1024*1024)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

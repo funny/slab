@@ -1,51 +1,79 @@
 package slab
 
-import "unsafe"
+import (
+	"unsafe"
+
+	"github.com/pkg/errors"
+)
 
 // ChanPool is a chan based slab allocation memory pool.
 type ChanPool struct {
 	classes []chanClass
 	minSize int
 	maxSize int
+	errChan chan error
 }
 
-// NewChanPool create a chan based slab allocation memory pool.
+// newChanPool create a chan based slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
 // pageSize is the memory size of each slab class.
-func NewChanPool(minSize, maxSize, factor, pageSize int) *ChanPool {
-	pool := &ChanPool{make([]chanClass, 0, 10), minSize, maxSize}
-	for chunkSize := minSize; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
-		c := chanClass{
-			size:   chunkSize,
-			page:   make([]byte, pageSize),
-			chunks: make(chan []byte, pageSize/chunkSize),
-		}
-		c.pageBegin = uintptr(unsafe.Pointer(&c.page[0]))
-		for i := 0; i < pageSize/chunkSize; i++ {
+func newChanPool(minSize, maxSize, factor int, pageSize int) *ChanPool {
+	var (
+		chunkSize int = minSize
+		n         int = 0
+		//pageSize  int = 8192 // 8kb
+	)
+	for ; chunkSize <= maxSize && chunkSize <= pageSize; chunkSize *= factor {
+		n++
+	}
+	if maxSize > int(chunkSize/factor) && maxSize <= pageSize {
+		n++
+	}
+	pool := &ChanPool{
+		classes: make([]chanClass, n),
+		minSize: minSize,
+		maxSize: maxSize,
+	}
+	chunkSize = minSize
+	for i := 0; i < n; i++ {
+		pool.classes[i].size = chunkSize
+		pool.classes[i].page = make([]byte, pageSize)
+		pool.classes[i].chunks = make(chan []byte, pageSize/chunkSize)
+		pool.classes[i].chanPool = pool
+		pool.classes[i].pageBegin = uintptr(unsafe.Pointer(&pool.classes[i].page[0]))
+		for j := 0; j < pageSize/chunkSize; j++ {
 			// lock down the capacity to protect append operation
-			mem := c.page[i*chunkSize : (i+1)*chunkSize : (i+1)*chunkSize]
-			c.chunks <- mem
-			if i == len(c.chunks)-1 {
-				c.pageEnd = uintptr(unsafe.Pointer(&mem[0]))
+			mem := pool.classes[i].page[j*chunkSize : (j+1)*chunkSize : (j+1)*chunkSize]
+			pool.classes[i].chunks <- mem
+			if j == len(pool.classes[i].chunks)-1 {
+				pool.classes[i].pageEnd = uintptr(unsafe.Pointer(&mem[0]))
 			}
 		}
-		pool.classes = append(pool.classes, c)
+
+		chunkSize *= factor
 	}
+	pool.errChan = make(chan error, n*5)
 	return pool
+}
+
+func (pool *ChanPool) ErrChan() <-chan error {
+	return pool.errChan
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
 func (pool *ChanPool) Alloc(size int) []byte {
-	if size <= pool.maxSize {
+	if pool == nil {
+		return nil
+	}
+	if size <= pool.classes[len(pool.classes)-1].size {
 		for i := 0; i < len(pool.classes); i++ {
 			if pool.classes[i].size >= size {
-				mem := pool.classes[i].Pop()
-				if mem != nil {
-					return mem[:size]
+				mem := pool.classes[i].pop()
+				if cap(mem) > 0 {
+					return mem[:size:size]
 				}
-				break
 			}
 		}
 	}
@@ -54,13 +82,19 @@ func (pool *ChanPool) Alloc(size int) []byte {
 
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *ChanPool) Free(mem []byte) {
+	if pool == nil {
+		return
+	}
 	size := cap(mem)
-	for i := 0; i < len(pool.classes); i++ {
-		if pool.classes[i].size == size {
-			pool.classes[i].Push(mem)
-			break
+	if size <= pool.classes[len(pool.classes)-1].size {
+		for i := 0; i < len(pool.classes); i++ {
+			if pool.classes[i].size >= size {
+				pool.classes[i].push(mem)
+				break
+			}
 		}
 	}
+	return
 }
 
 type chanClass struct {
@@ -69,13 +103,25 @@ type chanClass struct {
 	pageBegin uintptr
 	pageEnd   uintptr
 	chunks    chan []byte
+	chanPool  *ChanPool
 }
 
-func (c *chanClass) Push(mem []byte) {
-	c.chunks <- mem
+func (c *chanClass) push(mem []byte) {
+	if c == nil {
+		return
+	}
+	select {
+	case c.chunks <- mem:
+	default:
+		c.chanPool.errChan <- errors.Errorf("size: [%d],  chanClass's channels are overflowing...", c.size)
+	}
+	return
 }
 
-func (c *chanClass) Pop() []byte {
+func (c *chanClass) pop() []byte {
+	if c == nil {
+		return nil
+	}
 	select {
 	case mem := <-c.chunks:
 		return mem

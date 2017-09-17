@@ -10,13 +10,19 @@ type SyncPool struct {
 	maxSize     int
 }
 
-// NewSyncPool create a sync.Pool base slab allocation memory pool.
+// newSyncPool create a sync.Pool base slab allocation memory pool.
 // minSize is the smallest chunk size.
 // maxSize is the lagest chunk size.
 // factor is used to control growth of chunk size.
-func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
-	n := 0
-	for chunkSize := minSize; chunkSize <= maxSize; chunkSize *= factor {
+func newSyncPool(minSize, maxSize, factor int) *SyncPool {
+	var (
+		chunkSize int = minSize
+		n         int = 0
+	)
+	for ; chunkSize <= maxSize; chunkSize *= factor {
+		n++
+	}
+	if maxSize > int(chunkSize/factor) {
 		n++
 	}
 	pool := &SyncPool{
@@ -24,27 +30,34 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 		make([]int, n),
 		minSize, maxSize,
 	}
-	n = 0
-	for chunkSize := minSize; chunkSize <= maxSize; chunkSize *= factor {
-		pool.classesSize[n] = chunkSize
-		pool.classes[n].New = func(size int) func() interface{} {
+	chunkSize = minSize
+	for i := 0; i < n; i++ {
+		pool.classesSize[i] = chunkSize
+		pool.classes[i].New = func(size int) func() interface{} {
 			return func() interface{} {
 				buf := make([]byte, size)
 				return &buf
 			}
 		}(chunkSize)
-		n++
+		chunkSize *= factor
 	}
 	return pool
 }
 
+func (pool *SyncPool) ErrChan() <-chan error {
+	return nil
+}
+
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
 func (pool *SyncPool) Alloc(size int) []byte {
-	if size <= pool.maxSize {
+	if pool == nil {
+		return nil
+	}
+	if size <= pool.classesSize[len(pool.classesSize)-1] {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				mem := pool.classes[i].Get().(*[]byte)
-				return (*mem)[:size]
+				return (*mem)[:size:size]
 			}
 		}
 	}
@@ -53,12 +66,17 @@ func (pool *SyncPool) Alloc(size int) []byte {
 
 // Free release a []byte that alloc from Pool.Alloc.
 func (pool *SyncPool) Free(mem []byte) {
-	if size := cap(mem); size <= pool.maxSize {
+	if pool == nil {
+		return
+	}
+	size := cap(mem)
+	if size <= pool.classesSize[len(pool.classesSize)-1] {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				pool.classes[i].Put(&mem)
-				return
+				break
 			}
 		}
 	}
+	return
 }
