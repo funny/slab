@@ -72,7 +72,11 @@ type chanClass struct {
 }
 
 func (c *chanClass) Push(mem []byte) {
-	c.chunks <- mem
+	select {
+	case c.chunks <- mem:
+	default:
+		mem = nil
+	}
 }
 
 func (c *chanClass) Pop() []byte {

@@ -42,13 +42,8 @@ func Test_ChanPool_AllocLarge(t *testing.T) {
 func Test_ChanPool_DoubleFree(t *testing.T) {
 	pool := NewChanPool(128, 1024, 2, 1024)
 	mem := pool.Alloc(64)
-	go func() {
-		defer func() {
-			utest.NotNilNow(t, recover())
-		}()
-		pool.Free(mem)
-		pool.Free(mem)
-	}()
+	pool.Free(mem)
+	pool.Free(mem)
 }
 
 func Test_ChanPool_AllocSlow(t *testing.T) {
