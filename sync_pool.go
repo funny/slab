@@ -39,16 +39,19 @@ func NewSyncPool(minSize, maxSize, factor int) *SyncPool {
 }
 
 // Alloc try alloc a []byte from internal slab class if no free chunk in slab class Alloc will make one.
-func (pool *SyncPool) Alloc(size int) []byte {
+// 1st returned value indicate a slice caller can use
+// 2nd returned value indicate the capacity of the slice
+// 3rd returned value indicate whether the slice is allocated from this pool or not
+func (pool *SyncPool) Alloc(size int) ([]byte, int, bool) {
 	if size <= pool.maxSize {
 		for i := 0; i < len(pool.classesSize); i++ {
 			if pool.classesSize[i] >= size {
 				mem := pool.classes[i].Get().(*[]byte)
-				return (*mem)[:size]
+				return (*mem)[:size], pool.classesSize[i], true
 			}
 		}
 	}
-	return make([]byte, size)
+	return make([]byte, size), size, false
 }
 
 // Free release a []byte that alloc from Pool.Alloc.
