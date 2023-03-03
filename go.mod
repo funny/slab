@@ -1,4 +1,4 @@
-module github.com/funny/slab
+module github.com/xiehui3651/slab
 
 go 1.19
 
