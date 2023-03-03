@@ -7,6 +7,7 @@ Introduction
 [![GoDoc](https://img.shields.io/badge/api-reference-blue.svg)](https://godoc.org/github.com/funny/slab)
 
 Slab allocation memory pools for Go.
+forked from https://github.com/funny/slab and add go.mod
 
 Usage
 =====
